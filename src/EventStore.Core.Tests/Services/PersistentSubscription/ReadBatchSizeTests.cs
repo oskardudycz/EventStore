@@ -9,7 +9,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 		[TestCase(2, 1)]
 		public void read_batch_size_greater_or_equal_to_buffer_size_throws(int readBatchSize, int bufferSize) {
 			Assert.Throws<ArgumentOutOfRangeException>(() =>
-				new Core.Services.PersistentSubscription.PersistentSubscription(PersistentSubscriptionParamsBuilder
+				new Core.Services.PersistentSubscription.PersistentSubscription(PersistentSubscriptionToStreamParamsBuilder
 					.CreateFor("stream", "group")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(new FakeCheckpointReader())

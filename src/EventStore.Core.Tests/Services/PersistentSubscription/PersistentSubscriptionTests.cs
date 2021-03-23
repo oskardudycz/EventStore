@@ -25,7 +25,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 		[OneTimeSetUp]
 		public void Setup() {
 			_sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(new FakeCheckpointReader())
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -39,7 +39,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 
 		[Test]
 		public void stream_name_is_set() {
-			Assert.AreEqual("streamName", _sub.EventStreamId);
+			Assert.AreEqual("streamName", _sub.EventSource);
 		}
 
 		[Test]
@@ -57,7 +57,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 		public void null_checkpoint_reader_throws_argument_null() {
 			Assert.Throws<ArgumentNullException>(() => {
 				_sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-					PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+					PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 						.WithEventLoader(new FakeStreamReader(x => { }))
 						.WithCheckpointReader(null)
 						.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -69,7 +69,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 		public void null_checkpoint_writer_throws_argument_null() {
 			Assert.Throws<ArgumentNullException>(() => {
 				_sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-					PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+					PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 						.WithEventLoader(new FakeStreamReader(x => { }))
 						.WithCheckpointReader(new FakeCheckpointReader())
 						.WithCheckpointWriter(null)
@@ -82,7 +82,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 		public void null_event_reader_throws_argument_null() {
 			Assert.Throws<ArgumentNullException>(() => {
 				_sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-					PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+					PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 						.WithEventLoader(null)
 						.WithCheckpointReader(new FakeCheckpointReader())
 						.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -94,7 +94,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 		public void null_stream_throws_argument_null() {
 			Assert.Throws<ArgumentNullException>(() => {
 				_sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-					PersistentSubscriptionParamsBuilder.CreateFor(null, "groupName")
+					PersistentSubscriptionToStreamParamsBuilder.CreateFor(null, "groupName")
 						.WithEventLoader(new FakeStreamReader(x => { }))
 						.WithCheckpointReader(new FakeCheckpointReader())
 						.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -106,7 +106,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 		public void null_groupname_throws_argument_null() {
 			Assert.Throws<ArgumentNullException>(() => {
 				_sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-					PersistentSubscriptionParamsBuilder.CreateFor("streamName", null)
+					PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", null)
 						.WithEventLoader(new FakeStreamReader(x => { }))
 						.WithCheckpointReader(new FakeCheckpointReader())
 						.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -122,7 +122,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -140,7 +140,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope2 = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -162,7 +162,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope2 = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -183,7 +183,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope1 = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -200,7 +200,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope1 = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -218,7 +218,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope1 = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -237,7 +237,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope2 = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -264,7 +264,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope2 = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -290,7 +290,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope = new FakeEnvelope();
 			var checkpointReader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(
 						(stream, startEventNumber, countToLoad, batchSize, resolveLinkTos, onEventsFound) => {
 							List<ResolvedEvent> events = new List<ResolvedEvent>();
@@ -351,7 +351,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var deleted = false;
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }, () => { deleted = true; }))
@@ -367,7 +367,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var deleted = false;
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -385,7 +385,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 		public void subscription_with_less_than_n_events_returns_less_events_to_the_client() {
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -408,7 +408,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 		public void subscription_with_n_events_returns_n_events_to_the_client() {
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -431,7 +431,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 		public void subscription_with_more_than_n_events_returns_n_events_to_the_client() {
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -459,7 +459,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 		public void subscription_with_no_events_returns_no_events_to_the_client() {
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -479,7 +479,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope1 = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
@@ -507,7 +507,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope1 = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
@@ -535,7 +535,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope1 = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
@@ -564,7 +564,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope1 = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
@@ -594,7 +594,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope1 = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
@@ -624,7 +624,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope1 = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
@@ -656,7 +656,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope1 = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
@@ -689,7 +689,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope1 = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
@@ -719,7 +719,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope1 = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
@@ -750,7 +750,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var envelope1 = new FakeEnvelope();
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
@@ -780,7 +780,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			long cp = -1;
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
@@ -808,7 +808,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			long cp = -1;
 			var reader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
@@ -864,7 +864,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var messageParker = new FakeMessageParker();
 
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
@@ -934,7 +934,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var streamReader = new FakeStreamReader(x => { lastReadEvent = x; });
 			new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(streamReader)
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -952,7 +952,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var streamReader = new FakeStreamReader(x => { lastReadEvent = x; });
 			new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(streamReader)
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
@@ -970,13 +970,13 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var streamReader = new FakeStreamReader(x => { lastReadEvent = x; });
 			new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(streamReader)
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 					.WithMessageParker(new FakeMessageParker())
 					.PreferDispatchToSingle()
-					.StartFrom(10)
+					.StartFrom(new PersistentSubscriptionSingleStreamPosition(10))
 					.MaximumToCheckPoint(1));
 			reader.Load(null);
 			Assert.AreEqual(10, lastReadEvent);
@@ -991,7 +991,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var parker = new FakeMessageParker();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
@@ -1019,7 +1019,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var parker = new FakeMessageParker();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
@@ -1052,7 +1052,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var parker = new FakeMessageParker();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
@@ -1080,7 +1080,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var parker = new FakeMessageParker();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
@@ -1109,7 +1109,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var parker = new FakeMessageParker();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
@@ -1137,7 +1137,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var parker = new FakeMessageParker();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
@@ -1170,7 +1170,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var parker = new FakeMessageParker();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
@@ -1209,7 +1209,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var parker = new FakeMessageParker();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
@@ -1242,7 +1242,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var parker = new FakeMessageParker();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
@@ -1268,7 +1268,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var parker = new FakeMessageParker();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
@@ -1293,7 +1293,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var parker = new FakeMessageParker();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
@@ -1318,7 +1318,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var parker = new FakeMessageParker();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
@@ -1345,7 +1345,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var parker = new FakeMessageParker();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
@@ -1380,7 +1380,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var parker = new FakeMessageParker();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
@@ -1417,7 +1417,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 		[Test]
 		public void adding_a_client_adds_the_client() {
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(new FakeCheckpointReader())
 					.WithMessageParker(new FakeMessageParker())
@@ -1438,7 +1438,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 
 			var fakeCheckpointReader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(fakeCheckpointReader)
 					.WithMessageParker(new FakeMessageParker())
@@ -1481,7 +1481,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 
 			var fakeCheckpointReader = new FakeCheckpointReader();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(fakeCheckpointReader)
 					.WithMessageParker(new FakeMessageParker())
@@ -1526,7 +1526,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var parker = new FakeMessageParker();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
@@ -1555,7 +1555,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			var reader = new FakeCheckpointReader();
 			var parker = new FakeMessageParker();
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader(x => { }))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
@@ -1581,7 +1581,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			List<int> loadCount = new List<int>();
 
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader((stream, startEventNumber, countToLoad, batchSize, resolveLinkTos, onEventsFound) => loadCount.Add(countToLoad)))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
@@ -1627,7 +1627,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			List<int> loadCount = new List<int>();
 
 			var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
-				PersistentSubscriptionParamsBuilder.CreateFor("streamName", "groupName")
+				PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", "groupName")
 					.WithEventLoader(new FakeStreamReader((stream, startEventNumber, countToLoad, batchSize, resolveLinkTos, onEventsFound) => loadCount.Add(countToLoad)))
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))

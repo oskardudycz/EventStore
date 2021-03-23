@@ -848,7 +848,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 			if (message.SubscriptionStats == null) yield break;
 
 			foreach (var stat in message.SubscriptionStats) {
-				string escapedStreamId = Uri.EscapeDataString(stat.EventStreamId);
+				string escapedStreamId = Uri.EscapeDataString(stat.EventSource);
 				string escapedGroupName = Uri.EscapeDataString(stat.GroupName);
 				var info = new SubscriptionInfo {
 					Links = new List<RelLink>() {
@@ -861,14 +861,14 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 								string.Format("/subscriptions/{0}/{1}/replayParked", escapedStreamId,
 									escapedGroupName)), "replayParked")
 					},
-					EventStreamId = stat.EventStreamId,
+					EventStreamId = stat.EventSource, /*'EventStreamId' name kept for backward compatibility*/
 					GroupName = stat.GroupName,
 					Status = stat.Status,
 					AverageItemsPerSecond = stat.AveragePerSecond,
 					TotalItemsProcessed = stat.TotalItems,
 					CountSinceLastMeasurement = stat.CountSinceLastMeasurement,
 					LastKnownEventNumber = stat.LastKnownMessage,
-					LastProcessedEventNumber = stat.LastProcessedEventNumber,
+					LastProcessedEventNumber = (stat.LastProcessedEventPosition != null)? long.Parse(stat.LastProcessedEventPosition) : 0, /*'LastProcessedEventNumber' name kept for backward compatibility*/
 					ReadBufferCount = stat.ReadBufferCount,
 					LiveBufferCount = stat.LiveBufferCount,
 					RetryBufferCount = stat.RetryBufferCount,
@@ -891,7 +891,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 						PreferRoundRobin = stat.NamedConsumerStrategy == SystemConsumerStrategies.RoundRobin,
 						ReadBatchSize = stat.ReadBatchSize,
 						ResolveLinktos = stat.ResolveLinktos,
-						StartFrom = stat.StartFrom,
+						StartFrom = (stat.StartFrom != null) ? long.Parse(stat.StartFrom) : 0,
 						ExtraStatistics = stat.ExtraStatistics,
 						MaxSubscriberCount = stat.MaxSubscriberCount,
 					},
@@ -924,7 +924,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 			if (message.SubscriptionStats == null) yield break;
 
 			foreach (var stat in message.SubscriptionStats) {
-				string escapedStreamId = Uri.EscapeDataString(stat.EventStreamId);
+				string escapedStreamId = Uri.EscapeDataString(stat.EventSource);
 				string escapedGroupName = Uri.EscapeDataString(stat.GroupName);
 				var info = new SubscriptionSummary {
 					Links = new List<RelLink>() {
@@ -933,13 +933,13 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 								string.Format("/subscriptions/{0}/{1}/info", escapedStreamId, escapedGroupName)),
 							"detail"),
 					},
-					EventStreamId = stat.EventStreamId,
+					EventStreamId = stat.EventSource, /*'EventStreamId' name kept for backward compatibility*/
 					GroupName = stat.GroupName,
 					Status = stat.Status,
 					AverageItemsPerSecond = stat.AveragePerSecond,
 					TotalItemsProcessed = stat.TotalItems,
 					LastKnownEventNumber = stat.LastKnownMessage,
-					LastProcessedEventNumber = stat.LastProcessedEventNumber,
+					LastProcessedEventNumber = (stat.LastProcessedEventPosition != null)? long.Parse(stat.LastProcessedEventPosition) : 0, /*'LastProcessedEventNumber' name kept for backward compatibility*/
 					ParkedMessageUri = MakeUrl(manager,
 						string.Format(parkedMessageUriTemplate, escapedStreamId, escapedGroupName)),
 					GetMessagesUri = MakeUrl(manager,

@@ -304,9 +304,9 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				new PersistentSubscriptionParams(
 					resolveLinkTos,
 					key,
-					eventStreamId,
+					new PersistentSubscriptionSingleStreamEventSource(eventStreamId),
 					groupName,
-					startFrom,
+					new PersistentSubscriptionSingleStreamPosition(startFrom),
 					extraStatistics,
 					messageTimeout,
 					maxRetryCount,

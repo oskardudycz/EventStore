@@ -19,8 +19,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			get { return _settings.SubscriptionId; }
 		}
 
-		public string EventStreamId {
-			get { return _settings.EventStreamId; }
+		public string EventSource {
+			get { return _settings.EventSource.ToString(); }
 		}
 
 		public string GroupName {
@@ -71,7 +71,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			Ensure.NotNull(persistentSubscriptionParams.CheckpointWriter, "checkpointWriter");
 			Ensure.NotNull(persistentSubscriptionParams.MessageParker, "messageParker");
 			Ensure.NotNull(persistentSubscriptionParams.SubscriptionId, "subscriptionId");
-			Ensure.NotNull(persistentSubscriptionParams.EventStreamId, "eventStreamId");
+			Ensure.NotNull(persistentSubscriptionParams.EventSource, "eventSource");
 			Ensure.NotNull(persistentSubscriptionParams.GroupName, "groupName");
 			if (persistentSubscriptionParams.ReadBatchSize >= persistentSubscriptionParams.BufferSize) {
 				throw new ArgumentOutOfRangeException($"{nameof(persistentSubscriptionParams.ReadBatchSize)} may not be greater than or equal to {nameof(persistentSubscriptionParams.BufferSize)}");
@@ -103,9 +103,17 @@ namespace EventStore.Core.Services.PersistentSubscription {
 					Log.Debug("Subscription {subscriptionId}: no checkpoint found", _settings.SubscriptionId);
 
 					Log.Debug("Start from = " + _settings.StartFrom);
-					_nextEventToPullFrom = _settings.StartFrom >= 0 ? _settings.StartFrom : 0;
+
+					bool startInHistory;
+					if (_settings.StartFrom is PersistentSubscriptionSingleStreamPosition startFrom) {
+						_nextEventToPullFrom = startFrom.StreamEventNumber >= 0 ? startFrom.StreamEventNumber : 0;
+						startInHistory = startFrom.StreamEventNumber >= 0;
+					} else {
+						throw new NotImplementedException();
+					}
+
 					_streamBufferSource.SetResult(new StreamBuffer(_settings.BufferSize, _settings.LiveBufferSize, -1,
-						_settings.StartFrom >= 0));
+						startInHistory));
 					TryReadingNewBatch();
 				} else {
 					_nextEventToPullFrom = checkpoint.Value + 1;
@@ -129,9 +137,13 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				if (!StreamBuffer.CanAccept(_settings.ReadBatchSize))
 					return;
 				_state |= PersistentSubscriptionState.OutstandingPageRequest;
-				_settings.StreamReader.BeginReadEvents(_settings.EventStreamId, _nextEventToPullFrom,
-					Math.Max(_settings.ReadBatchSize, 10), _settings.ReadBatchSize, _settings.ResolveLinkTos,
-					HandleReadCompleted);
+				if (_settings.EventSource is PersistentSubscriptionSingleStreamEventSource streamSource) {
+					_settings.StreamReader.BeginReadEvents(streamSource.EventStreamId, _nextEventToPullFrom,
+						Math.Max(_settings.ReadBatchSize, 10), _settings.ReadBatchSize, _settings.ResolveLinkTos,
+						HandleReadCompleted);
+				} else {
+					throw new NotImplementedException();
+				}
 			}
 		}
 
@@ -205,8 +217,10 @@ namespace EventStore.Core.Services.PersistentSubscription {
 
 		public void NotifyLiveSubscriptionMessage(ResolvedEvent resolvedEvent) {
 			lock (_lock) {
-				if (resolvedEvent.OriginalEvent.EventNumber < _settings.StartFrom)
-					return;
+				if (_settings.StartFrom is PersistentSubscriptionSingleStreamPosition streamCheckpoint) {
+					if(resolvedEvent.OriginalEvent.EventNumber < streamCheckpoint.StreamEventNumber)
+						return;
+				}
 				if (_state == PersistentSubscriptionState.NotReady)
 					return;
 				_statistics.SetLastKnownEventNumber(resolvedEvent.OriginalEventNumber);

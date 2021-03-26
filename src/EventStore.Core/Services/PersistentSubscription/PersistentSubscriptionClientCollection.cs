@@ -24,8 +24,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			_consumerStrategy.ClientAdded(client);
 		}
 
-		public ConsumerPushResult PushMessageToClient(ResolvedEvent ev, int retryCount, long? sequenceNumber) {
-			return _consumerStrategy.PushMessageToClient(ev, retryCount);
+		public ConsumerPushResult PushMessageToClient(OutstandingMessage message) {
+			return _consumerStrategy.PushMessageToClient(message);
 		}
 
 		public IEnumerable<OutstandingMessage> RemoveClientByConnectionId(Guid connectionId) {

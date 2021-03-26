@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
 
 namespace EventStore.Core.Services.PersistentSubscription {
@@ -81,7 +82,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			return _byTime.Keys;
 		}
 
-		public long GetLowestPosition() {
+		public (ResolvedEvent?, long) GetLowestPosition() {
 			var result = long.MaxValue;
 			foreach(var x in _bySequences){
 				if(!x.Value.IsReplayedEvent)

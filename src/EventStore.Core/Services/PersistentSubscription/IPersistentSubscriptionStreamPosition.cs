@@ -1,4 +1,5 @@
 using System;
+using EventStore.Core.Data;
 
 namespace EventStore.Core.Services.PersistentSubscription {
 	public interface IPersistentSubscriptionStreamPosition : IEquatable<IPersistentSubscriptionStreamPosition>, IComparable<IPersistentSubscriptionStreamPosition> {
@@ -6,6 +7,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		long StreamEventNumber { get; }
 		bool IsAllStreamPosition { get; }
 		(long Commit, long Prepare) TFPosition { get; }
+		bool IsLivePosition { get; }
 		string ToString();
 	}
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
 
 namespace EventStore.Core.Services.PersistentSubscription {
@@ -133,7 +134,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			return false;
 		}
 
-		public long GetLowestRetry() {
+		public (ResolvedEvent?, long) GetLowestRetry() {
 			long result = long.MaxValue;
 			foreach(var x in _retry){
 				if(!x.IsReplayedEvent)

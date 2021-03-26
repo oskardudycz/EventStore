@@ -9,7 +9,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 	public class StreamBufferTests {
 		[Test]
 		public void adding_read_message_in_correct_order() {
-			var buffer = new StreamBuffer(10, 10, -1, true);
+			var buffer = new StreamBuffer(10, 10, null, true);
 			var id = Guid.NewGuid();
 			buffer.AddReadMessage(BuildMessageAt(id, 0));
 			Assert.AreEqual(1, buffer.BufferCount);
@@ -20,7 +20,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 
 		[Test]
 		public void adding_multiple_read_message_in_correct_order() {
-			var buffer = new StreamBuffer(10, 10, -1, true);
+			var buffer = new StreamBuffer(10, 10, null, true);
 			var id1 = Guid.NewGuid();
 			var id2 = Guid.NewGuid();
 			buffer.AddReadMessage(BuildMessageAt(id1, 0));
@@ -40,7 +40,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 
 		[Test]
 		public void adding_multiple_read_message_in_wrong_order() {
-			var buffer = new StreamBuffer(10, 10, -1, true);
+			var buffer = new StreamBuffer(10, 10, null, true);
 			var id1 = Guid.NewGuid();
 			var id2 = Guid.NewGuid();
 			buffer.AddReadMessage(BuildMessageAt(id1, 1));
@@ -59,7 +59,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 
 		[Test]
 		public void adding_multiple_same_read_message() {
-			var buffer = new StreamBuffer(10, 10, -1, true);
+			var buffer = new StreamBuffer(10, 10, null, true);
 			var id1 = Guid.NewGuid();
 			buffer.AddReadMessage(BuildMessageAt(id1, 0));
 			buffer.AddReadMessage(BuildMessageAt(id1, 0));
@@ -77,7 +77,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 
 		[Test]
 		public void adding_messages_to_read_after_same_on_live_switches_to_live() {
-			var buffer = new StreamBuffer(10, 10, -1, true);
+			var buffer = new StreamBuffer(10, 10, null, true);
 			var id1 = Guid.NewGuid();
 			buffer.AddLiveMessage(BuildMessageAt(id1, 0));
 			buffer.AddReadMessage(BuildMessageAt(id1, 0));
@@ -91,7 +91,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 
 		[Test]
 		public void adding_messages_to_read_after_later_live_does_not_switch() {
-			var buffer = new StreamBuffer(10, 10, -1, true);
+			var buffer = new StreamBuffer(10, 10, null, true);
 			var id1 = Guid.NewGuid();
 			var id2 = Guid.NewGuid();
 			buffer.AddLiveMessage(BuildMessageAt(id1, 5));
@@ -106,7 +106,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 
 		[Test]
 		public void adding_messages_to_live_without_start_from_beginning() {
-			var buffer = new StreamBuffer(10, 10, -1, false);
+			var buffer = new StreamBuffer(10, 10, null, false);
 			var id1 = Guid.NewGuid();
 			var id2 = Guid.NewGuid();
 			buffer.AddLiveMessage(BuildMessageAt(id1, 6));
@@ -125,7 +125,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 
 		[Test]
 		public void adding_messages_with_lower_in_live() {
-			var buffer = new StreamBuffer(10, 10, -1, true);
+			var buffer = new StreamBuffer(10, 10, null, true);
 			var id1 = Guid.NewGuid();
 			var id2 = Guid.NewGuid();
 			buffer.AddLiveMessage(BuildMessageAt(id1, 5));
@@ -142,7 +142,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 
 		[Test]
 		public void skipped_messages_are_not_removed() {
-			var buffer = new StreamBuffer(10, 10, -1, true);
+			var buffer = new StreamBuffer(10, 10, null, true);
 			var id1 = Guid.NewGuid();
 			buffer.AddReadMessage(BuildMessageAt(id1, 0));
 			var id2 = Guid.NewGuid();
@@ -163,7 +163,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 
 		[Test]
 		public void retried_messages_appear_first() {
-			var buffer = new StreamBuffer(10, 10, -1, true);
+			var buffer = new StreamBuffer(10, 10, null, true);
 			var id1 = Guid.NewGuid();
 			buffer.AddReadMessage(BuildMessageAt(id1, 0));
 			var id2 = Guid.NewGuid();
@@ -191,7 +191,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 
 		[Test]
 		public void retried_messages_appear_in_version_order() {
-			var buffer = new StreamBuffer(10, 10, -1, true);
+			var buffer = new StreamBuffer(10, 10, null, true);
 			var id1 = Guid.NewGuid();
 			buffer.AddReadMessage(BuildMessageAt(id1, 0));
 			var id2 = Guid.NewGuid();
@@ -222,26 +222,30 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 
 		[Test]
 		public void lowest_retry_doesnt_assume_order() {
-			var buffer = new StreamBuffer(10, 10, -1, true);
+			var buffer = new StreamBuffer(10, 10, null, true);
 			buffer.AddRetry(BuildMessageAt(Guid.NewGuid(), 4));
 			buffer.AddRetry(BuildMessageAt(Guid.NewGuid(), 2));
 			buffer.AddRetry(BuildMessageAt(Guid.NewGuid(), 3));
-			Assert.AreEqual(2, buffer.GetLowestRetry());
+			Assert.AreEqual(2, buffer.GetLowestRetry().sequenceNumber);
 		}
 
 		[Test]
 		public void lowest_retry_ignores_replayed_events() {
-			var buffer = new StreamBuffer(10, 10, -1, true);
+			var buffer = new StreamBuffer(10, 10, null, true);
 			buffer.AddRetry(BuildMessageAt(Guid.NewGuid(), 4));
 			buffer.AddRetry(BuildMessageAt(Guid.NewGuid(), 2));
 			buffer.AddRetry(BuildMessageAt(Guid.NewGuid(), 3));
-			//add parked event
-			buffer.AddRetry(new OutstandingMessage(Guid.NewGuid(), null, Helper.BuildFakeEvent(Guid.NewGuid(), "foo", "$persistentsubscription-foo::group-parked", 1), 0));
-			Assert.AreEqual(2, buffer.GetLowestRetry());
+			//add parked events
+			buffer.AddRetry(OutstandingMessage.ForParkedEvent(Helper.BuildFakeEvent(Guid.NewGuid(), "foo", "$persistentsubscription-foo::group-parked", 1)));
+			Assert.AreEqual(2, buffer.GetLowestRetry().sequenceNumber);
 		}
 
-		private OutstandingMessage BuildMessageAt(Guid id, int version) {
-			return new OutstandingMessage(id, null, BuildEventAt(id, version), 0);
+		private OutstandingMessage BuildMessageAt(Guid id, int eventNumber) {
+			IPersistentSubscriptionStreamPosition previousEventPosition =
+				eventNumber > 0 ? new PersistentSubscriptionSingleStreamPosition(eventNumber - 1) : null;
+			var @event = BuildEventAt(id, eventNumber);
+			return OutstandingMessage.ForPushedEvent(
+				OutstandingMessage.ForNewEvent(@event, new PersistentSubscriptionSingleStreamPosition(eventNumber)), eventNumber, previousEventPosition).message;
 		}
 
 		private ResolvedEvent BuildEventAt(Guid id, int version) {

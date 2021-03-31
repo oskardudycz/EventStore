@@ -831,6 +831,14 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		public void Handle(ClientMessage.ReadNextNPersistentMessages message) {
 			if (!_started) return;
 
+			if (string.IsNullOrEmpty(message.EventStreamId) || message.EventStreamId == SystemStreams.AllStream) {
+				message.Envelope.ReplyWith(new ClientMessage.ReadNextNPersistentMessagesCompleted(
+					message.CorrelationId,
+					ClientMessage.ReadNextNPersistentMessagesCompleted.ReadNextNPersistentMessagesResult.Fail,
+					"Bad stream name.", null));
+				return;
+			}
+
 			List<PersistentSubscription> subscribers;
 			if (!_subscriptionTopics.TryGetValue(message.EventStreamId, out subscribers)) {
 				message.Envelope.ReplyWith(

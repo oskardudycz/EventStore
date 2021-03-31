@@ -653,6 +653,7 @@ namespace EventStore.Core {
 			_mainBus.Subscribe(perSubscrQueue.WidenFrom<ClientMessage.DeletePersistentSubscriptionToStream, Message>());
 			_mainBus.Subscribe(perSubscrQueue.WidenFrom<ClientMessage.CreatePersistentSubscriptionToAll, Message>());
 			_mainBus.Subscribe(perSubscrQueue.WidenFrom<ClientMessage.UpdatePersistentSubscriptionToAll, Message>());
+			_mainBus.Subscribe(perSubscrQueue.WidenFrom<ClientMessage.DeletePersistentSubscriptionToAll, Message>());
 			_mainBus.Subscribe(perSubscrQueue.WidenFrom<ClientMessage.ConnectToPersistentSubscription, Message>());
 			_mainBus.Subscribe(perSubscrQueue.WidenFrom<ClientMessage.UnsubscribeFromStream, Message>());
 			_mainBus.Subscribe(perSubscrQueue.WidenFrom<ClientMessage.PersistentSubscriptionAckEvents, Message>());
@@ -690,6 +691,7 @@ namespace EventStore.Core {
 			perSubscrBus.Subscribe<ClientMessage.DeletePersistentSubscriptionToStream>(persistentSubscription);
 			perSubscrBus.Subscribe<ClientMessage.CreatePersistentSubscriptionToAll>(persistentSubscription);
 			perSubscrBus.Subscribe<ClientMessage.UpdatePersistentSubscriptionToAll>(persistentSubscription);
+			perSubscrBus.Subscribe<ClientMessage.DeletePersistentSubscriptionToAll>(persistentSubscription);
 			perSubscrBus.Subscribe<ClientMessage.ReplayParkedMessages>(persistentSubscription);
 			perSubscrBus.Subscribe<ClientMessage.ReplayParkedMessage>(persistentSubscription);
 			perSubscrBus.Subscribe<ClientMessage.ReadNextNPersistentMessages>(persistentSubscription);

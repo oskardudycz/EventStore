@@ -1489,6 +1489,49 @@ namespace EventStore.Core.Messages {
 			}
 		}
 
+		public class DeletePersistentSubscriptionToAll : ReadRequestMessage {
+			private static readonly int TypeId = Interlocked.Increment(ref NextMsgId);
+
+			public override int MsgTypeId {
+				get { return TypeId; }
+			}
+
+			public readonly string GroupName;
+
+			public DeletePersistentSubscriptionToAll(Guid internalCorrId, Guid correlationId, IEnvelope envelope
+				, string groupName, ClaimsPrincipal user, DateTime? expires = null)
+				: base(internalCorrId, correlationId, envelope, user, expires) {
+				GroupName = groupName;
+			}
+		}
+
+		public class DeletePersistentSubscriptionToAllCompleted : ReadResponseMessage {
+			private static readonly int TypeId = Interlocked.Increment(ref NextMsgId);
+
+			public override int MsgTypeId {
+				get { return TypeId; }
+			}
+
+			public readonly Guid CorrelationId;
+			public readonly string Reason;
+			public readonly DeletePersistentSubscriptionToAllResult Result;
+
+			public DeletePersistentSubscriptionToAllCompleted(Guid correlationId, DeletePersistentSubscriptionToAllResult result,
+				string reason) {
+				Ensure.NotEmptyGuid(correlationId, "correlationId");
+				CorrelationId = correlationId;
+				Result = result;
+				Reason = reason;
+			}
+
+			public enum DeletePersistentSubscriptionToAllResult {
+				Success = 0,
+				DoesNotExist = 1,
+				Fail = 2,
+				AccessDenied = 3
+			}
+		}
+
 		public class PersistentSubscriptionAckEvents : ReadRequestMessage {
 			private static readonly int TypeId = Interlocked.Increment(ref NextMsgId);
 

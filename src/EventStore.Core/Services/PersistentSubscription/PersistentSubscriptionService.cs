@@ -34,6 +34,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		IHandle<ClientMessage.DeletePersistentSubscriptionToStream>,
 		IHandle<ClientMessage.CreatePersistentSubscriptionToAll>,
 		IHandle<ClientMessage.UpdatePersistentSubscriptionToAll>,
+		IHandle<ClientMessage.DeletePersistentSubscriptionToAll>,
 		IHandle<ClientMessage.ReadNextNPersistentMessages>,
 		IHandle<MonitoringMessage.GetAllPersistentSubscriptionStats>,
 		IHandle<MonitoringMessage.GetPersistentSubscriptionStats>,
@@ -549,34 +550,107 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			subscribers.Add(subscription);
 		}
 
-		public void Handle(ClientMessage.DeletePersistentSubscriptionToStream message) {
+		private void DeletePersistentSubscription(
+				IPersistentSubscriptionEventSource eventSource,
+				string groupName,
+				Action<string> onSuccess,
+				Action<string> onFail,
+				Action<string> onNotExist,
+				Action<string> onAccessDenied,
+				string user
+		) {
 			if (!_started) return;
-			var key = BuildSubscriptionGroupKey(message.EventStreamId, message.GroupName);
+			var key = BuildSubscriptionGroupKey(eventSource.ToString(), groupName);
 			Log.Debug("Deleting persistent subscription {subscriptionKey}", key);
 
 			PersistentSubscription subscription;
 			if (!_subscriptionsById.TryGetValue(key, out subscription)) {
-				message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(
-					message.CorrelationId,
-					ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.DoesNotExist,
-					"Group '" + message.GroupName + "' does not exist."));
+				onNotExist($"Group '{groupName}' does not exist.");
 				return;
 			}
 
-			if (!_subscriptionTopics.ContainsKey(message.EventStreamId)) {
+			if (!_subscriptionTopics.ContainsKey(eventSource.ToString())) {
+				onFail($"Group '{groupName}' does not exist.");
+				return;
+			}
+
+			RemoveSubscription(eventSource.ToString(), groupName);
+			RemoveSubscriptionConfig(user, eventSource.ToString(), groupName);
+			subscription.Delete();
+			SaveConfiguration(() => onSuccess(""));
+		}
+
+
+		public void Handle(ClientMessage.DeletePersistentSubscriptionToStream message) {
+			if (string.IsNullOrEmpty(message.EventStreamId) || message.EventStreamId == SystemStreams.AllStream) {
 				message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(
 					message.CorrelationId,
 					ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.Fail,
-					"Group '" + message.GroupName + "' does not exist."));
+					"Bad stream name."));
 				return;
 			}
 
-			RemoveSubscription(message.EventStreamId, message.GroupName);
-			RemoveSubscriptionConfig(message.User.Identity.Name, message.EventStreamId, message.GroupName);
-			subscription.Delete();
-			SaveConfiguration(() => message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(
-				message.CorrelationId,
-				ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.Success, "")));
+			DeletePersistentSubscription(
+				new PersistentSubscriptionSingleStreamEventSource(message.EventStreamId),
+				message.GroupName,
+				(msg) => {
+					message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(
+						message.CorrelationId,
+						ClientMessage.DeletePersistentSubscriptionToStreamCompleted
+							.DeletePersistentSubscriptionToStreamResult.Success, msg));
+				},
+				(error) => {
+					message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(
+						message.CorrelationId,
+						ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.Fail,
+						error));
+				},
+				(error) => {
+					message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(
+						message.CorrelationId,
+						ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.DoesNotExist,
+						error));
+				},
+				(error) => {
+					message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(
+						message.CorrelationId,
+						ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.AccessDenied,
+						error));
+				},
+				message.User?.Identity?.Name
+			);
+		}
+
+		public void Handle(ClientMessage.DeletePersistentSubscriptionToAll message) {
+			DeletePersistentSubscription(
+				new PersistentSubscriptionAllStreamEventSource(),
+				message.GroupName,
+				(msg) => {
+					message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToAllCompleted(
+						message.CorrelationId,
+						ClientMessage.DeletePersistentSubscriptionToAllCompleted
+							.DeletePersistentSubscriptionToAllResult.Success, msg));
+				},
+				(error) => {
+					message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToAllCompleted(
+						message.CorrelationId,
+						ClientMessage.DeletePersistentSubscriptionToAllCompleted.DeletePersistentSubscriptionToAllResult.Fail,
+						error));
+				},
+				(error) => {
+					message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToAllCompleted(
+						message.CorrelationId,
+						ClientMessage.DeletePersistentSubscriptionToAllCompleted.DeletePersistentSubscriptionToAllResult.DoesNotExist,
+						error));
+				},
+				(error) => {
+					message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToAllCompleted(
+						message.CorrelationId,
+						ClientMessage.DeletePersistentSubscriptionToAllCompleted.DeletePersistentSubscriptionToAllResult.AccessDenied,
+						error));
+				},
+				message.User?.Identity?.Name
+			);
 		}
 
 		private void RemoveSubscriptionConfig(string username, string eventSource, string groupName) {

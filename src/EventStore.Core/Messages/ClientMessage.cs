@@ -1089,6 +1089,31 @@ namespace EventStore.Core.Messages {
 			}
 		}
 
+		public class ConnectToPersistentSubscriptionToAll : ReadRequestMessage {
+			private static readonly int TypeId = Interlocked.Increment(ref NextMsgId);
+			public override int MsgTypeId { get { return TypeId; } }
+
+			public readonly Guid ConnectionId;
+			public readonly string ConnectionName;
+			public readonly string GroupName;
+			public readonly int AllowedInFlightMessages;
+			public readonly string From;
+
+			public ConnectToPersistentSubscriptionToAll(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
+				Guid connectionId, string connectionName, string groupName,
+				int allowedInFlightMessages, string from, ClaimsPrincipal user, DateTime? expires = null)
+				: base(internalCorrId, correlationId, envelope, user, expires) {
+				Ensure.NotEmptyGuid(connectionId, "connectionId");
+				Ensure.NotNullOrEmpty(groupName, "groupName");
+				Ensure.Nonnegative(allowedInFlightMessages, "AllowedInFlightMessages");
+				GroupName = groupName;
+				ConnectionId = connectionId;
+				ConnectionName = connectionName;
+				AllowedInFlightMessages = allowedInFlightMessages;
+				From = from;
+			}
+		}
+
 		public class CreatePersistentSubscriptionToStream : ReadRequestMessage {
 			private static readonly int TypeId = Interlocked.Increment(ref NextMsgId);
 

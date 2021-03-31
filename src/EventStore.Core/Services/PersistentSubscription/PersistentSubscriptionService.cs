@@ -25,6 +25,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		IHandle<ClientMessage.ReplayParkedMessage>,
 		IHandle<SystemMessage.StateChangeMessage>,
 		IHandle<ClientMessage.ConnectToPersistentSubscriptionToStream>,
+		IHandle<ClientMessage.ConnectToPersistentSubscriptionToAll>,
 		IHandle<StorageMessage.EventCommitted>,
 		IHandle<ClientMessage.UnsubscribeFromStream>,
 		IHandle<ClientMessage.PersistentSubscriptionAckEvents>,
@@ -692,41 +693,77 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			}
 		}
 
-		public void Handle(ClientMessage.ConnectToPersistentSubscriptionToStream message) {
+		public void ConnectToPersistentSubscription(
+			IPersistentSubscriptionEventSource eventSource,
+			string groupName,
+			int allowedInFlightMessages,
+			Guid connectionId,
+			string connectionName,
+			string from,
+			Guid correlationId,
+			IEnvelope envelope,
+			string user) {
 			if (!_started) return;
-			
+
 			List<PersistentSubscription> subscribers;
-			if (!_subscriptionTopics.TryGetValue(message.EventStreamId, out subscribers)) {
-				message.Envelope.ReplyWith(new ClientMessage.SubscriptionDropped(message.CorrelationId,
+			if (!_subscriptionTopics.TryGetValue(eventSource.ToString(), out subscribers)) {
+				envelope.ReplyWith(new ClientMessage.SubscriptionDropped(correlationId,
 					SubscriptionDropReason.NotFound));
 				return;
 			}
 
-			var key = BuildSubscriptionGroupKey(message.EventStreamId, message.GroupName);
+			var key = BuildSubscriptionGroupKey(eventSource.ToString(), groupName);
 			PersistentSubscription subscription;
 			if (!_subscriptionsById.TryGetValue(key, out subscription)) {
-				message.Envelope.ReplyWith(new ClientMessage.SubscriptionDropped(message.CorrelationId,
-					SubscriptionDropReason.NotFound));
+				envelope.ReplyWith(new ClientMessage.SubscriptionDropped(correlationId, SubscriptionDropReason.NotFound));
 				return;
 			}
 
 			if (subscription.HasReachedMaxClientCount) {
-				message.Envelope.ReplyWith(new ClientMessage.SubscriptionDropped(message.CorrelationId,
+				envelope.ReplyWith(new ClientMessage.SubscriptionDropped(correlationId,
 					SubscriptionDropReason.SubscriberMaxCountReached));
 				return;
 			}
 
-			Log.Debug("New connection to persistent subscription {subscriptionKey} by {connectionId}", key,
-				message.ConnectionId);
-			var lastEventNumber = _readIndex.GetStreamLastEventNumber(message.EventStreamId);
-			var lastCommitPos = _readIndex.LastIndexedPosition;
+			Log.Debug("New connection to persistent subscription {subscriptionKey} by {connectionId}", key, connectionId);
+			long? lastEventNumber = null;
+			if (eventSource.FromStream) {
+				lastEventNumber = _readIndex.GetStreamLastEventNumber(eventSource.EventStreamId);
+			}
+			long lastCommitPos = _readIndex.LastIndexedPosition;
 			var subscribedMessage =
-				new ClientMessage.PersistentSubscriptionConfirmation(key, message.CorrelationId, lastCommitPos,
-					lastEventNumber);
-			message.Envelope.ReplyWith(subscribedMessage);
-			var name = message.User == null ? "anonymous" : message.User.Identity.Name;
-			subscription.AddClient(message.CorrelationId, message.ConnectionId, message.ConnectionName, message.Envelope,
-				message.AllowedInFlightMessages, name, message.From);
+				new ClientMessage.PersistentSubscriptionConfirmation(key, correlationId, lastCommitPos, lastEventNumber);
+			envelope.ReplyWith(subscribedMessage);
+			var name = user ?? "anonymous";
+			subscription.AddClient(correlationId, connectionId, connectionName, envelope,
+				allowedInFlightMessages, name, from);
+
+		}
+
+		public void Handle(ClientMessage.ConnectToPersistentSubscriptionToStream message) {
+			ConnectToPersistentSubscription(
+				new PersistentSubscriptionSingleStreamEventSource(message.EventStreamId),
+				message.GroupName,
+				message.AllowedInFlightMessages,
+				message.ConnectionId,
+				message.ConnectionName,
+				message.From,
+				message.CorrelationId,
+				message.Envelope,
+				message.User?.Identity?.Name);
+		}
+
+		public void Handle(ClientMessage.ConnectToPersistentSubscriptionToAll message) {
+			ConnectToPersistentSubscription(
+				new PersistentSubscriptionAllStreamEventSource(),
+				message.GroupName,
+				message.AllowedInFlightMessages,
+				message.ConnectionId,
+				message.ConnectionName,
+				message.From,
+				message.CorrelationId,
+				message.Envelope,
+				message.User?.Identity?.Name);
 		}
 
 		private static string BuildSubscriptionGroupKey(string stream, string groupName) {

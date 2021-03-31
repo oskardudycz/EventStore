@@ -32,6 +32,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		IHandle<ClientMessage.CreatePersistentSubscriptionToStream>,
 		IHandle<ClientMessage.UpdatePersistentSubscriptionToStream>,
 		IHandle<ClientMessage.DeletePersistentSubscriptionToStream>,
+		IHandle<ClientMessage.CreatePersistentSubscriptionToAll>,
 		IHandle<ClientMessage.ReadNextNPersistentMessages>,
 		IHandle<MonitoringMessage.GetAllPersistentSubscriptionStats>,
 		IHandle<MonitoringMessage.GetPersistentSubscriptionStats>,
@@ -143,21 +144,84 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			UnsubscribeFromStream(message.CorrelationId, true);
 		}
 
-		public void Handle(ClientMessage.CreatePersistentSubscriptionToStream message) {
+		private void CreatePersistentSubscription(
+				IPersistentSubscriptionEventSource eventSource,
+				string groupName,
+				IPersistentSubscriptionStreamPosition startFrom,
+				int messageTimeoutMilliseconds,
+				bool resolveLinkTos,
+				int maxRetryCount,
+				int bufferSize,
+				int liveBufferSize,
+				int readBatchSize,
+				int maxSubscriberCount,
+				string namedConsumerStrategy,
+				int maxCheckPointCount,
+				int minCheckPointCount,
+				int checkPointAfterMilliseconds,
+				bool recordStatistics,
+				Action<string> onSuccess,
+				Action<string> onFail,
+				Action<string> onExists,
+				Action<string> onAccessDenied,
+				string user
+		) {
 			if (!_started) return;
-			var key = BuildSubscriptionGroupKey(message.EventStreamId, message.GroupName);
+			var key = BuildSubscriptionGroupKey(eventSource.ToString(), groupName);
 			Log.Debug("Creating persistent subscription {subscriptionKey}", key);
 
 			if (_subscriptionsById.ContainsKey(key)) {
-				message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
-					message.CorrelationId,
-					ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult
-						.AlreadyExists,
-					"Group '" + message.GroupName + "' already exists."));
+				onExists($"Group '{groupName}' already exists.");
 				return;
 			}
 
-			if (message.EventStreamId == null || message.EventStreamId == "" || message.EventStreamId == "$all") {
+			if (!_consumerStrategyRegistry.ValidateStrategy(namedConsumerStrategy)) {
+				onFail($"Consumer strategy {namedConsumerStrategy} does not exist.");
+				return;
+			}
+
+			CreateSubscriptionGroup(eventSource,
+				groupName,
+				resolveLinkTos,
+				startFrom,
+				recordStatistics,
+				maxRetryCount,
+				liveBufferSize,
+				bufferSize,
+				readBatchSize,
+				ToCheckPointAfterTimeout(checkPointAfterMilliseconds),
+				minCheckPointCount,
+				maxCheckPointCount,
+				maxSubscriberCount,
+				namedConsumerStrategy,
+				ToMessageTimeout(messageTimeoutMilliseconds)
+			);
+
+			Log.Debug("New persistent subscription {subscriptionKey}", key);
+			_config.Updated = DateTime.Now;
+			_config.UpdatedBy = user;
+			_config.Entries.Add(new PersistentSubscriptionEntry {
+				Stream = eventSource.ToString(), //'Stream' name kept for backward compatibility
+				Group = groupName,
+				ResolveLinkTos = resolveLinkTos,
+				CheckPointAfter = checkPointAfterMilliseconds,
+				ExtraStatistics = recordStatistics,
+				HistoryBufferSize = bufferSize,
+				LiveBufferSize = liveBufferSize,
+				MaxCheckPointCount = maxCheckPointCount,
+				MinCheckPointCount = minCheckPointCount,
+				MaxRetryCount = maxRetryCount,
+				ReadBatchSize = readBatchSize,
+				MaxSubscriberCount = maxSubscriberCount,
+				MessageTimeout = messageTimeoutMilliseconds,
+				NamedConsumerStrategy = namedConsumerStrategy,
+				StartFrom = startFrom.ToString()
+			});
+			SaveConfiguration(() => onSuccess(""));
+		}
+
+		public void Handle(ClientMessage.CreatePersistentSubscriptionToStream message) {
+			if (string.IsNullOrEmpty(message.EventStreamId) || message.EventStreamId == SystemStreams.AllStream) {
 				message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
 					message.CorrelationId,
 					ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.Fail,
@@ -165,54 +229,95 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				return;
 			}
 
-			if (!_consumerStrategyRegistry.ValidateStrategy(message.NamedConsumerStrategy)) {
-				message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
-					message.CorrelationId,
-					ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.Fail,
-					string.Format("Consumer strategy {0} does not exist.", message.NamedConsumerStrategy)));
-				return;
-			}
-
-			CreateSubscriptionGroup(message.EventStreamId,
+			CreatePersistentSubscription(
+				new PersistentSubscriptionSingleStreamEventSource(message.EventStreamId),
 				message.GroupName,
+				new PersistentSubscriptionSingleStreamPosition(message.StartFrom),
+				message.MessageTimeoutMilliseconds,
 				message.ResolveLinkTos,
-				message.StartFrom,
-				message.RecordStatistics,
 				message.MaxRetryCount,
-				message.LiveBufferSize,
 				message.BufferSize,
+				message.LiveBufferSize,
 				message.ReadBatchSize,
-				ToCheckPointAfterTimeout(message.CheckPointAfterMilliseconds),
-				message.MinCheckPointCount,
-				message.MaxCheckPointCount,
 				message.MaxSubscriberCount,
 				message.NamedConsumerStrategy,
-				ToMessageTimeout(message.MessageTimeoutMilliseconds)
-			);
+				message.MaxCheckPointCount,
+				message.MinCheckPointCount,
+				message.CheckPointAfterMilliseconds,
+				message.RecordStatistics,
+				(msg) => {
+					message.Envelope.ReplyWith(
+						new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
+							message.CorrelationId,
+							ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.Success,
+							msg));
+				},
+				(error) => {
+					message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
+						message.CorrelationId,
+						ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.Fail,
+						error));
+				},
+				(error) => {
+					message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
+						message.CorrelationId,
+						ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.AlreadyExists,
+						error));
+				},
+				(error) => {
+					message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
+						message.CorrelationId,
+						ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.AccessDenied,
+						error));
+				},
+				message.User?.Identity?.Name
+				);
+		}
 
-			Log.Debug("New persistent subscription {subscriptionKey}", key);
-			_config.Updated = DateTime.Now;
-			_config.UpdatedBy = message.User.Identity.Name;
-			_config.Entries.Add(new PersistentSubscriptionEntry {
-				Stream = message.EventStreamId,
-				Group = message.GroupName,
-				ResolveLinkTos = message.ResolveLinkTos,
-				CheckPointAfter = message.CheckPointAfterMilliseconds,
-				ExtraStatistics = message.RecordStatistics,
-				HistoryBufferSize = message.BufferSize,
-				LiveBufferSize = message.LiveBufferSize,
-				MaxCheckPointCount = message.MaxCheckPointCount,
-				MinCheckPointCount = message.MinCheckPointCount,
-				MaxRetryCount = message.MaxRetryCount,
-				ReadBatchSize = message.ReadBatchSize,
-				MaxSubscriberCount = message.MaxSubscriberCount,
-				MessageTimeout = message.MessageTimeoutMilliseconds,
-				NamedConsumerStrategy = message.NamedConsumerStrategy,
-				StartFrom = message.StartFrom
-			});
-			SaveConfiguration(() => message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
-				message.CorrelationId,
-				ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.Success, "")));
+		public void Handle(ClientMessage.CreatePersistentSubscriptionToAll message) {
+			CreatePersistentSubscription(
+				new PersistentSubscriptionAllStreamEventSource(),
+				message.GroupName,
+				new PersistentSubscriptionAllStreamPosition(message.StartFrom.CommitPosition, message.StartFrom.PreparePosition),
+				message.MessageTimeoutMilliseconds,
+				message.ResolveLinkTos,
+				message.MaxRetryCount,
+				message.BufferSize,
+				message.LiveBufferSize,
+				message.ReadBatchSize,
+				message.MaxSubscriberCount,
+				message.NamedConsumerStrategy,
+				message.MaxCheckPointCount,
+				message.MinCheckPointCount,
+				message.CheckPointAfterMilliseconds,
+				message.RecordStatistics,
+				(msg) => {
+					message.Envelope.ReplyWith(
+						new ClientMessage.CreatePersistentSubscriptionToAllCompleted(
+							message.CorrelationId,
+							ClientMessage.CreatePersistentSubscriptionToAllCompleted.CreatePersistentSubscriptionToAllResult.Success,
+							msg));
+				},
+				(error) => {
+					message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToAllCompleted(
+						message.CorrelationId,
+						ClientMessage.CreatePersistentSubscriptionToAllCompleted.CreatePersistentSubscriptionToAllResult.Fail,
+						error));
+				},
+				(error) => {
+					message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToAllCompleted(
+						message.CorrelationId,
+						ClientMessage.CreatePersistentSubscriptionToAllCompleted.CreatePersistentSubscriptionToAllResult.AlreadyExists,
+						error));
+				},
+				(error) => {
+					message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToAllCompleted(
+						message.CorrelationId,
+						ClientMessage.CreatePersistentSubscriptionToAllCompleted.CreatePersistentSubscriptionToAllResult.AccessDenied,
+						error));
+				},
+				message.User?.Identity?.Name
+			);
 		}
 
 		public void Handle(ClientMessage.UpdatePersistentSubscriptionToStream message) {
@@ -278,10 +383,10 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.Success, "")));
 		}
 
-		private void CreateSubscriptionGroup(string eventStreamId,
+		private void CreateSubscriptionGroup(IPersistentSubscriptionEventSource eventSource,
 			string groupName,
 			bool resolveLinkTos,
-			long startFrom,
+			IPersistentSubscriptionStreamPosition startFrom,
 			bool extraStatistics,
 			int maxRetryCount,
 			int liveBufferSize,
@@ -293,20 +398,20 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			int maxSubscriberCount,
 			string namedConsumerStrategy,
 			TimeSpan messageTimeout) {
-			var key = BuildSubscriptionGroupKey(eventStreamId, groupName);
+			var key = BuildSubscriptionGroupKey(eventSource.ToString(), groupName);
 			List<PersistentSubscription> subscribers;
-			if (!_subscriptionTopics.TryGetValue(eventStreamId, out subscribers)) {
+			if (!_subscriptionTopics.TryGetValue(eventSource.ToString(), out subscribers)) {
 				subscribers = new List<PersistentSubscription>();
-				_subscriptionTopics.Add(eventStreamId, subscribers);
+				_subscriptionTopics.Add(eventSource.ToString(), subscribers);
 			}
 
 			var subscription = new PersistentSubscription(
 				new PersistentSubscriptionParams(
 					resolveLinkTos,
 					key,
-					new PersistentSubscriptionSingleStreamEventSource(eventStreamId),
+					eventSource,
 					groupName,
-					new PersistentSubscriptionSingleStreamPosition(startFrom),
+					startFrom,
 					extraStatistics,
 					messageTimeout,
 					maxRetryCount,
@@ -591,10 +696,17 @@ namespace EventStore.Core.Services.PersistentSubscription {
 								continue;
 							}
 
-							CreateSubscriptionGroup(entry.Stream,
+							IPersistentSubscriptionEventSource eventSource;
+							if (entry.Stream == SystemStreams.AllStream) {
+								eventSource = new PersistentSubscriptionAllStreamEventSource();
+							} else {
+								eventSource = new PersistentSubscriptionSingleStreamEventSource(entry.Stream);
+							}
+
+							CreateSubscriptionGroup(eventSource,
 								entry.Group,
 								entry.ResolveLinkTos,
-								entry.StartFrom,
+								eventSource.GetStreamPositionFor(entry.StartFrom),
 								entry.ExtraStatistics,
 								entry.MaxRetryCount,
 								entry.LiveBufferSize,

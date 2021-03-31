@@ -1166,6 +1166,81 @@ namespace EventStore.Core.Messages {
 			}
 		}
 
+		public class CreatePersistentSubscriptionToAll : ReadRequestMessage {
+			private static readonly int TypeId = Interlocked.Increment(ref NextMsgId);
+
+			public override int MsgTypeId {
+				get { return TypeId; }
+			}
+
+			public readonly TFPos StartFrom;
+			public readonly int MessageTimeoutMilliseconds;
+			public readonly bool RecordStatistics;
+
+			public readonly bool ResolveLinkTos;
+			public readonly int MaxRetryCount;
+			public readonly int BufferSize;
+			public readonly int LiveBufferSize;
+			public readonly int ReadBatchSize;
+
+			public readonly string GroupName;
+			public readonly int MaxSubscriberCount;
+			public readonly string NamedConsumerStrategy;
+			public readonly int MaxCheckPointCount;
+			public readonly int MinCheckPointCount;
+			public readonly int CheckPointAfterMilliseconds;
+
+			public CreatePersistentSubscriptionToAll(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
+				string groupName, bool resolveLinkTos, TFPos startFrom,
+				int messageTimeoutMilliseconds, bool recordStatistics, int maxRetryCount, int bufferSize,
+				int liveBufferSize, int readbatchSize,
+				int checkPointAfterMilliseconds, int minCheckPointCount, int maxCheckPointCount,
+				int maxSubscriberCount, string namedConsumerStrategy, ClaimsPrincipal user, DateTime? expires = null)
+				: base(internalCorrId, correlationId, envelope, user, expires) {
+				ResolveLinkTos = resolveLinkTos;
+				GroupName = groupName;
+				StartFrom = startFrom;
+				MessageTimeoutMilliseconds = messageTimeoutMilliseconds;
+				RecordStatistics = recordStatistics;
+				MaxRetryCount = maxRetryCount;
+				BufferSize = bufferSize;
+				LiveBufferSize = liveBufferSize;
+				ReadBatchSize = readbatchSize;
+				MaxCheckPointCount = maxCheckPointCount;
+				MinCheckPointCount = minCheckPointCount;
+				CheckPointAfterMilliseconds = checkPointAfterMilliseconds;
+				MaxSubscriberCount = maxSubscriberCount;
+				NamedConsumerStrategy = namedConsumerStrategy;
+			}
+		}
+
+		public class CreatePersistentSubscriptionToAllCompleted : ReadResponseMessage {
+			private static readonly int TypeId = Interlocked.Increment(ref NextMsgId);
+
+			public override int MsgTypeId {
+				get { return TypeId; }
+			}
+
+			public readonly Guid CorrelationId;
+			public readonly string Reason;
+			public readonly CreatePersistentSubscriptionToAllResult Result;
+
+			public CreatePersistentSubscriptionToAllCompleted(Guid correlationId, CreatePersistentSubscriptionToAllResult result,
+				string reason) {
+				Ensure.NotEmptyGuid(correlationId, "correlationId");
+				CorrelationId = correlationId;
+				Result = result;
+				Reason = reason;
+			}
+
+			public enum CreatePersistentSubscriptionToAllResult {
+				Success = 0,
+				AlreadyExists = 1,
+				Fail = 2,
+				AccessDenied = 3
+			}
+		}
+
 		public class UpdatePersistentSubscriptionToStream : ReadRequestMessage {
 			private static readonly int TypeId = Interlocked.Increment(ref NextMsgId);
 

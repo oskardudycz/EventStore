@@ -776,9 +776,14 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		}
 
 		private void ProcessEventCommited(string eventStreamId, long commitPosition, EventRecord evnt) {
-			List<PersistentSubscription> subscriptions;
-			if (!_subscriptionTopics.TryGetValue(eventStreamId, out subscriptions))
-				return;
+			var subscriptions = new List<PersistentSubscription>();
+			if (_subscriptionTopics.TryGetValue(eventStreamId, out var subscriptionsToStream)) {
+				subscriptions.AddRange(subscriptionsToStream);
+			}
+			if (_subscriptionTopics.TryGetValue(SystemStreams.AllStream, out var subscriptionsToAll)) {
+				subscriptions.AddRange(subscriptionsToAll);
+			}
+
 			for (int i = 0, n = subscriptions.Count; i < n; i++) {
 				var subscr = subscriptions[i];
 				var pair = ResolvedEvent.ForUnresolvedEvent(evnt, commitPosition);

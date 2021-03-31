@@ -72,26 +72,26 @@ namespace EventStore.Core.Services {
 					ClientMessage.ReadNextNPersistentMessagesCompleted.ReadNextNPersistentMessagesResult.AccessDenied,
 					AccessDenied, Array.Empty<(ResolvedEvent, int)>());
 
-		private static readonly Func<ClientMessage.CreatePersistentSubscription, Message>
+		private static readonly Func<ClientMessage.CreatePersistentSubscriptionToStream, Message>
 			CreatePersistentSubscriptionDenied = msg =>
-				new ClientMessage.CreatePersistentSubscriptionCompleted(msg.CorrelationId,
-					ClientMessage.CreatePersistentSubscriptionCompleted.CreatePersistentSubscriptionResult.AccessDenied,
+				new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(msg.CorrelationId,
+					ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.AccessDenied,
 					AccessDenied);
 
-		private static readonly Func<ClientMessage.UpdatePersistentSubscription, Message>
+		private static readonly Func<ClientMessage.UpdatePersistentSubscriptionToStream, Message>
 			UpdatePersistentSubscriptionDenied = msg =>
-				new ClientMessage.UpdatePersistentSubscriptionCompleted(msg.CorrelationId,
-					ClientMessage.UpdatePersistentSubscriptionCompleted.UpdatePersistentSubscriptionResult.AccessDenied,
+				new ClientMessage.UpdatePersistentSubscriptionToStreamCompleted(msg.CorrelationId,
+					ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.AccessDenied,
 					AccessDenied);
 
 		private static readonly Func<ClientMessage.ReplayParkedMessages, Message> ReplayAllParkedMessagesDenied =
 			msg => new ClientMessage.ReplayMessagesReceived(msg.CorrelationId,
 				ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.AccessDenied, AccessDenied);
 
-		private static readonly Func<ClientMessage.DeletePersistentSubscription, Message>
+		private static readonly Func<ClientMessage.DeletePersistentSubscriptionToStream, Message>
 			DeletePersistentSubscriptionDenied =
-				msg => new ClientMessage.DeletePersistentSubscriptionCompleted(msg.CorrelationId,
-					ClientMessage.DeletePersistentSubscriptionCompleted.DeletePersistentSubscriptionResult.AccessDenied,
+				msg => new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(msg.CorrelationId,
+					ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.AccessDenied,
 					AccessDenied);
 
 		private static readonly Func<ClientMessage.TransactionStart, Message> TransactionStartDenied = msg =>
@@ -144,7 +144,7 @@ namespace EventStore.Core.Services {
 				case ClientMessage.ReadStreamEventsForward msg:
 					Authorize(msg, destination);
 					break;
-				case ClientMessage.UpdatePersistentSubscription msg:
+				case ClientMessage.UpdatePersistentSubscriptionToStream msg:
 					Authorize(msg, destination);
 					break;
 				case ClientMessage.SubscribeToStream msg: 
@@ -153,10 +153,10 @@ namespace EventStore.Core.Services {
 				case ClientMessage.ConnectToPersistentSubscription msg:
 					Authorize(msg, destination);
 					break;
-				case ClientMessage.CreatePersistentSubscription msg:
+				case ClientMessage.CreatePersistentSubscriptionToStream msg:
 					Authorize(msg, destination);
 					break;
-				case ClientMessage.DeletePersistentSubscription msg:
+				case ClientMessage.DeletePersistentSubscriptionToStream msg:
 					Authorize(msg, destination);
 					break;
 				case ClientMessage.DeleteStream msg:
@@ -288,12 +288,12 @@ namespace EventStore.Core.Services {
 				msg.Envelope, destination, msg, DeleteStreamDenied);
 		}
 
-		private void Authorize(ClientMessage.DeletePersistentSubscription msg, IPublisher destination) {
+		private void Authorize(ClientMessage.DeletePersistentSubscriptionToStream msg, IPublisher destination) {
 			Authorize(msg.User, DeletePersistentSubscription, msg.Envelope, destination, msg,
 				DeletePersistentSubscriptionDenied);
 		}
 
-		private void Authorize(ClientMessage.CreatePersistentSubscription msg, IPublisher destination) {
+		private void Authorize(ClientMessage.CreatePersistentSubscriptionToStream msg, IPublisher destination) {
 			Authorize(msg.User, CreatePersistentSubscription, msg.Envelope, destination, msg,
 				CreatePersistentSubscriptionDenied);
 		}
@@ -305,7 +305,7 @@ namespace EventStore.Core.Services {
 				ConnectToPersistentSubscriptionDenied);
 		}
 
-		private void Authorize(ClientMessage.UpdatePersistentSubscription msg, IPublisher destination) {
+		private void Authorize(ClientMessage.UpdatePersistentSubscriptionToStream msg, IPublisher destination) {
 			Authorize(msg.User, UpdatePersistentSubscription, msg.Envelope, destination, msg,
 				UpdatePersistentSubscriptionDenied);
 		}

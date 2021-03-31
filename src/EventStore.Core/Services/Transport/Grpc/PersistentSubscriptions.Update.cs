@@ -20,7 +20,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 				UpdateOperation, context.CancellationToken).ConfigureAwait(false)) {
 				throw AccessDenied();
 			}
-			_publisher.Publish(new ClientMessage.UpdatePersistentSubscription(
+			_publisher.Publish(new ClientMessage.UpdatePersistentSubscriptionToStream(
 				correlationId,
 				correlationId,
 				new CallbackEnvelope(HandleUpdatePersistentSubscriptionCompleted),
@@ -59,20 +59,20 @@ namespace EventStore.Core.Services.Transport.Grpc {
 					return;
 				}
 
-				if (!(message is ClientMessage.UpdatePersistentSubscriptionCompleted completed)) {
+				if (!(message is ClientMessage.UpdatePersistentSubscriptionToStreamCompleted completed)) {
 					updatePersistentSubscriptionSource.TrySetException(
-						RpcExceptions.UnknownMessage<ClientMessage.UpdatePersistentSubscriptionCompleted>(message));
+						RpcExceptions.UnknownMessage<ClientMessage.UpdatePersistentSubscriptionToStreamCompleted>(message));
 					return;
 				}
 
 				switch (completed.Result) {
-					case ClientMessage.UpdatePersistentSubscriptionCompleted.UpdatePersistentSubscriptionResult.Success:
+					case ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.Success:
 						updatePersistentSubscriptionSource.TrySetResult(new UpdateResp());
 						return;
-					case ClientMessage.UpdatePersistentSubscriptionCompleted.UpdatePersistentSubscriptionResult.Fail:
+					case ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.Fail:
 						updatePersistentSubscriptionSource.TrySetException(RpcExceptions.PersistentSubscriptionFailed(request.Options.StreamIdentifier, request.Options.GroupName, completed.Reason));
 						return;
-					case ClientMessage.UpdatePersistentSubscriptionCompleted.UpdatePersistentSubscriptionResult
+					case ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult
 						.AccessDenied:
 						updatePersistentSubscriptionSource.TrySetException(RpcExceptions.AccessDenied());
 						return;

@@ -1089,7 +1089,7 @@ namespace EventStore.Core.Messages {
 			}
 		}
 
-		public class CreatePersistentSubscription : ReadRequestMessage {
+		public class CreatePersistentSubscriptionToStream : ReadRequestMessage {
 			private static readonly int TypeId = Interlocked.Increment(ref NextMsgId);
 
 			public override int MsgTypeId {
@@ -1114,7 +1114,7 @@ namespace EventStore.Core.Messages {
 			public readonly int MinCheckPointCount;
 			public readonly int CheckPointAfterMilliseconds;
 
-			public CreatePersistentSubscription(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
+			public CreatePersistentSubscriptionToStream(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
 				string eventStreamId, string groupName, bool resolveLinkTos, long startFrom,
 				int messageTimeoutMilliseconds, bool recordStatistics, int maxRetryCount, int bufferSize,
 				int liveBufferSize, int readbatchSize,
@@ -1139,7 +1139,7 @@ namespace EventStore.Core.Messages {
 			}
 		}
 
-		public class CreatePersistentSubscriptionCompleted : ReadResponseMessage {
+		public class CreatePersistentSubscriptionToStreamCompleted : ReadResponseMessage {
 			private static readonly int TypeId = Interlocked.Increment(ref NextMsgId);
 
 			public override int MsgTypeId {
@@ -1148,9 +1148,9 @@ namespace EventStore.Core.Messages {
 
 			public readonly Guid CorrelationId;
 			public readonly string Reason;
-			public readonly CreatePersistentSubscriptionResult Result;
+			public readonly CreatePersistentSubscriptionToStreamResult Result;
 
-			public CreatePersistentSubscriptionCompleted(Guid correlationId, CreatePersistentSubscriptionResult result,
+			public CreatePersistentSubscriptionToStreamCompleted(Guid correlationId, CreatePersistentSubscriptionToStreamResult result,
 				string reason) {
 				Ensure.NotEmptyGuid(correlationId, "correlationId");
 				CorrelationId = correlationId;
@@ -1158,7 +1158,7 @@ namespace EventStore.Core.Messages {
 				Reason = reason;
 			}
 
-			public enum CreatePersistentSubscriptionResult {
+			public enum CreatePersistentSubscriptionToStreamResult {
 				Success = 0,
 				AlreadyExists = 1,
 				Fail = 2,
@@ -1166,7 +1166,7 @@ namespace EventStore.Core.Messages {
 			}
 		}
 
-		public class UpdatePersistentSubscription : ReadRequestMessage {
+		public class UpdatePersistentSubscriptionToStream : ReadRequestMessage {
 			private static readonly int TypeId = Interlocked.Increment(ref NextMsgId);
 
 			public override int MsgTypeId {
@@ -1192,7 +1192,7 @@ namespace EventStore.Core.Messages {
 			public readonly int CheckPointAfterMilliseconds;
 			public readonly string NamedConsumerStrategy;
 
-			public UpdatePersistentSubscription(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
+			public UpdatePersistentSubscriptionToStream(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
 				string eventStreamId, string groupName, bool resolveLinkTos, long startFrom,
 				int messageTimeoutMilliseconds, bool recordStatistics, int maxRetryCount, int bufferSize,
 				int liveBufferSize, int readbatchSize, int checkPointAfterMilliseconds, int minCheckPointCount,
@@ -1217,7 +1217,7 @@ namespace EventStore.Core.Messages {
 			}
 		}
 
-		public class UpdatePersistentSubscriptionCompleted : ReadResponseMessage {
+		public class UpdatePersistentSubscriptionToStreamCompleted : ReadResponseMessage {
 			private static readonly int TypeId = Interlocked.Increment(ref NextMsgId);
 
 			public override int MsgTypeId {
@@ -1226,9 +1226,9 @@ namespace EventStore.Core.Messages {
 
 			public readonly Guid CorrelationId;
 			public readonly string Reason;
-			public readonly UpdatePersistentSubscriptionResult Result;
+			public readonly UpdatePersistentSubscriptionToStreamResult Result;
 
-			public UpdatePersistentSubscriptionCompleted(Guid correlationId, UpdatePersistentSubscriptionResult result,
+			public UpdatePersistentSubscriptionToStreamCompleted(Guid correlationId, UpdatePersistentSubscriptionToStreamResult result,
 				string reason) {
 				Ensure.NotEmptyGuid(correlationId, "correlationId");
 				CorrelationId = correlationId;
@@ -1236,7 +1236,7 @@ namespace EventStore.Core.Messages {
 				Reason = reason;
 			}
 
-			public enum UpdatePersistentSubscriptionResult {
+			public enum UpdatePersistentSubscriptionToStreamResult {
 				Success = 0,
 				DoesNotExist = 1,
 				Fail = 2,
@@ -1293,7 +1293,7 @@ namespace EventStore.Core.Messages {
 			}
 		}
 
-		public class DeletePersistentSubscription : ReadRequestMessage {
+		public class DeletePersistentSubscriptionToStream : ReadRequestMessage {
 			private static readonly int TypeId = Interlocked.Increment(ref NextMsgId);
 
 			public override int MsgTypeId {
@@ -1303,7 +1303,7 @@ namespace EventStore.Core.Messages {
 			public readonly string GroupName;
 			public readonly string EventStreamId;
 
-			public DeletePersistentSubscription(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
+			public DeletePersistentSubscriptionToStream(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
 				string eventStreamId, string groupName, ClaimsPrincipal user, DateTime? expires = null)
 				: base(internalCorrId, correlationId, envelope, user, expires) {
 				GroupName = groupName;
@@ -1311,7 +1311,7 @@ namespace EventStore.Core.Messages {
 			}
 		}
 
-		public class DeletePersistentSubscriptionCompleted : ReadResponseMessage {
+		public class DeletePersistentSubscriptionToStreamCompleted : ReadResponseMessage {
 			private static readonly int TypeId = Interlocked.Increment(ref NextMsgId);
 
 			public override int MsgTypeId {
@@ -1320,9 +1320,9 @@ namespace EventStore.Core.Messages {
 
 			public readonly Guid CorrelationId;
 			public readonly string Reason;
-			public readonly DeletePersistentSubscriptionResult Result;
+			public readonly DeletePersistentSubscriptionToStreamResult Result;
 
-			public DeletePersistentSubscriptionCompleted(Guid correlationId, DeletePersistentSubscriptionResult result,
+			public DeletePersistentSubscriptionToStreamCompleted(Guid correlationId, DeletePersistentSubscriptionToStreamResult result,
 				string reason) {
 				Ensure.NotEmptyGuid(correlationId, "correlationId");
 				CorrelationId = correlationId;
@@ -1330,7 +1330,7 @@ namespace EventStore.Core.Messages {
 				Reason = reason;
 			}
 
-			public enum DeletePersistentSubscriptionResult {
+			public enum DeletePersistentSubscriptionToStreamResult {
 				Success = 0,
 				DoesNotExist = 1,
 				Fail = 2,

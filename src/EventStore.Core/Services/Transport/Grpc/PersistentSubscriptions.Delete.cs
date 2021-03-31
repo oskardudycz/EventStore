@@ -5,7 +5,7 @@ using EventStore.Core.Messaging;
 using EventStore.Client.PersistentSubscriptions;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
-using static EventStore.Core.Messages.ClientMessage.DeletePersistentSubscriptionCompleted;
+using static EventStore.Core.Messages.ClientMessage.DeletePersistentSubscriptionToStreamCompleted;
 
 namespace EventStore.Core.Services.Transport.Grpc {
 	public partial class PersistentSubscriptions {
@@ -22,7 +22,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 				throw AccessDenied();
 			}
 
-			_publisher.Publish(new ClientMessage.DeletePersistentSubscription(
+			_publisher.Publish(new ClientMessage.DeletePersistentSubscriptionToStream(
 				correlationId,
 				correlationId,
 				new CallbackEnvelope(HandleDeletePersistentSubscriptionCompleted),
@@ -38,23 +38,23 @@ namespace EventStore.Core.Services.Transport.Grpc {
 					return;
 				}
 
-				if (!(message is ClientMessage.DeletePersistentSubscriptionCompleted completed)) {
+				if (!(message is ClientMessage.DeletePersistentSubscriptionToStreamCompleted completed)) {
 					createPersistentSubscriptionSource.TrySetException(
-						RpcExceptions.UnknownMessage<ClientMessage.DeletePersistentSubscriptionCompleted>(message));
+						RpcExceptions.UnknownMessage<ClientMessage.DeletePersistentSubscriptionToStreamCompleted>(message));
 					return;
 				}
 
 				switch (completed.Result) {
-					case DeletePersistentSubscriptionResult.Success:
+					case DeletePersistentSubscriptionToStreamResult.Success:
 						createPersistentSubscriptionSource.TrySetResult(new DeleteResp());
 						return;
-					case DeletePersistentSubscriptionResult.Fail:
+					case DeletePersistentSubscriptionToStreamResult.Fail:
 						createPersistentSubscriptionSource.TrySetException(RpcExceptions.PersistentSubscriptionFailed(request.Options.StreamIdentifier, request.Options.GroupName, completed.Reason));
 						return;
-					case DeletePersistentSubscriptionResult.DoesNotExist:
+					case DeletePersistentSubscriptionToStreamResult.DoesNotExist:
 						createPersistentSubscriptionSource.TrySetException(RpcExceptions.PersistentSubscriptionDoesNotExist(request.Options.StreamIdentifier, request.Options.GroupName));
 						return;
-					case DeletePersistentSubscriptionResult.AccessDenied:
+					case DeletePersistentSubscriptionToStreamResult.AccessDenied:
 						createPersistentSubscriptionSource.TrySetException(RpcExceptions.AccessDenied());
 						return;
 					default:

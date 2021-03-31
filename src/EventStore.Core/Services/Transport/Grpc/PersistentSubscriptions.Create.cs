@@ -6,7 +6,7 @@ using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
-using static EventStore.Core.Messages.ClientMessage.CreatePersistentSubscriptionCompleted;
+using static EventStore.Core.Messages.ClientMessage.CreatePersistentSubscriptionToStreamCompleted;
 
 namespace EventStore.Core.Services.Transport.Grpc {
 	partial class PersistentSubscriptions {
@@ -23,7 +23,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 				CreateOperation, context.CancellationToken).ConfigureAwait(false)) {
 				throw AccessDenied();
 			}
-			_publisher.Publish(new ClientMessage.CreatePersistentSubscription(
+			_publisher.Publish(new ClientMessage.CreatePersistentSubscriptionToStream(
 				correlationId,
 				correlationId,
 				new CallbackEnvelope(HandleCreatePersistentSubscriptionCompleted),
@@ -62,23 +62,23 @@ namespace EventStore.Core.Services.Transport.Grpc {
 					return;
 				}
 
-				if (!(message is ClientMessage.CreatePersistentSubscriptionCompleted completed)) {
+				if (!(message is ClientMessage.CreatePersistentSubscriptionToStreamCompleted completed)) {
 					createPersistentSubscriptionSource.TrySetException(
-						RpcExceptions.UnknownMessage<ClientMessage.CreatePersistentSubscriptionCompleted>(message));
+						RpcExceptions.UnknownMessage<ClientMessage.CreatePersistentSubscriptionToStreamCompleted>(message));
 					return;
 				}
 
 				switch (completed.Result) {
-					case CreatePersistentSubscriptionResult.Success:
+					case CreatePersistentSubscriptionToStreamResult.Success:
 						createPersistentSubscriptionSource.TrySetResult(new CreateResp());
 						return;
-					case CreatePersistentSubscriptionResult.Fail:
+					case CreatePersistentSubscriptionToStreamResult.Fail:
 						createPersistentSubscriptionSource.TrySetException(RpcExceptions.PersistentSubscriptionFailed(request.Options.StreamIdentifier, request.Options.GroupName, completed.Reason));
 						return;
-					case CreatePersistentSubscriptionResult.AlreadyExists:
+					case CreatePersistentSubscriptionToStreamResult.AlreadyExists:
 						createPersistentSubscriptionSource.TrySetException(RpcExceptions.PersistentSubscriptionExists(request.Options.StreamIdentifier, request.Options.GroupName));
 						return;
-					case CreatePersistentSubscriptionResult.AccessDenied:
+					case CreatePersistentSubscriptionToStreamResult.AccessDenied:
 						createPersistentSubscriptionSource.TrySetException(RpcExceptions.AccessDenied());
 						return;
 					default:

@@ -451,18 +451,18 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 				(args, message) => http.ResponseCodec.To(message),
 				(args, message) => {
 					int code;
-					var m = message as ClientMessage.CreatePersistentSubscriptionCompleted;
+					var m = message as ClientMessage.CreatePersistentSubscriptionToStreamCompleted;
 					if (m == null) throw new Exception("unexpected message " + message);
 					switch (m.Result) {
-						case ClientMessage.CreatePersistentSubscriptionCompleted.CreatePersistentSubscriptionResult
+						case ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult
 							.Success:
 							code = HttpStatusCode.Created;
 							break;
-						case ClientMessage.CreatePersistentSubscriptionCompleted.CreatePersistentSubscriptionResult
+						case ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult
 							.AlreadyExists:
 							code = HttpStatusCode.Conflict;
 							break;
-						case ClientMessage.CreatePersistentSubscriptionCompleted.CreatePersistentSubscriptionResult
+						case ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult
 							.AccessDenied:
 							code = HttpStatusCode.Unauthorized;
 							break;
@@ -481,7 +481,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 					var data = http.RequestCodec.From<SubscriptionConfigData>(s);
 					var config = ParseConfig(data);
 					if (!ValidateConfig(config, http)) return;
-					var message = new ClientMessage.CreatePersistentSubscription(Guid.NewGuid(),
+					var message = new ClientMessage.CreatePersistentSubscriptionToStream(Guid.NewGuid(),
 						Guid.NewGuid(),
 						envelope,
 						stream,
@@ -514,19 +514,19 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 				(args, message) => http.ResponseCodec.To(message),
 				(args, message) => {
 					int code;
-					var m = message as ClientMessage.UpdatePersistentSubscriptionCompleted;
+					var m = message as ClientMessage.UpdatePersistentSubscriptionToStreamCompleted;
 					if (m == null) throw new Exception("unexpected message " + message);
 					switch (m.Result) {
-						case ClientMessage.UpdatePersistentSubscriptionCompleted.UpdatePersistentSubscriptionResult
+						case ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult
 							.Success:
 							code = HttpStatusCode.OK;
 							//TODO competing return uri to subscription
 							break;
-						case ClientMessage.UpdatePersistentSubscriptionCompleted.UpdatePersistentSubscriptionResult
+						case ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult
 							.DoesNotExist:
 							code = HttpStatusCode.NotFound;
 							break;
-						case ClientMessage.UpdatePersistentSubscriptionCompleted.UpdatePersistentSubscriptionResult
+						case ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult
 							.AccessDenied:
 							code = HttpStatusCode.Unauthorized;
 							break;
@@ -545,7 +545,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 					var data = http.RequestCodec.From<SubscriptionConfigData>(s);
 					var config = ParseConfig(data);
 					if (!ValidateConfig(config, http)) return;
-					var message = new ClientMessage.UpdatePersistentSubscription(Guid.NewGuid(),
+					var message = new ClientMessage.UpdatePersistentSubscriptionToStream(Guid.NewGuid(),
 						Guid.NewGuid(),
 						envelope,
 						stream,
@@ -649,18 +649,18 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 				(args, message) => http.ResponseCodec.To(message),
 				(args, message) => {
 					int code;
-					var m = message as ClientMessage.DeletePersistentSubscriptionCompleted;
+					var m = message as ClientMessage.DeletePersistentSubscriptionToStreamCompleted;
 					if (m == null) throw new Exception("unexpected message " + message);
 					switch (m.Result) {
-						case ClientMessage.DeletePersistentSubscriptionCompleted.DeletePersistentSubscriptionResult
+						case ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult
 							.Success:
 							code = HttpStatusCode.OK;
 							break;
-						case ClientMessage.DeletePersistentSubscriptionCompleted.DeletePersistentSubscriptionResult
+						case ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult
 							.DoesNotExist:
 							code = HttpStatusCode.NotFound;
 							break;
-						case ClientMessage.DeletePersistentSubscriptionCompleted.DeletePersistentSubscriptionResult
+						case ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult
 							.AccessDenied:
 							code = HttpStatusCode.Unauthorized;
 							break;
@@ -674,7 +674,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 				});
 			var groupname = match.BoundVariables["subscription"];
 			var stream = match.BoundVariables["stream"];
-			var cmd = new ClientMessage.DeletePersistentSubscription(Guid.NewGuid(), Guid.NewGuid(), envelope, stream,
+			var cmd = new ClientMessage.DeletePersistentSubscriptionToStream(Guid.NewGuid(), Guid.NewGuid(), envelope, stream,
 				groupname, http.User);
 			Publish(cmd);
 		}

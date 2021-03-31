@@ -29,9 +29,9 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		IHandle<ClientMessage.UnsubscribeFromStream>,
 		IHandle<ClientMessage.PersistentSubscriptionAckEvents>,
 		IHandle<ClientMessage.PersistentSubscriptionNackEvents>,
-		IHandle<ClientMessage.CreatePersistentSubscription>,
-		IHandle<ClientMessage.UpdatePersistentSubscription>,
-		IHandle<ClientMessage.DeletePersistentSubscription>,
+		IHandle<ClientMessage.CreatePersistentSubscriptionToStream>,
+		IHandle<ClientMessage.UpdatePersistentSubscriptionToStream>,
+		IHandle<ClientMessage.DeletePersistentSubscriptionToStream>,
 		IHandle<ClientMessage.ReadNextNPersistentMessages>,
 		IHandle<MonitoringMessage.GetAllPersistentSubscriptionStats>,
 		IHandle<MonitoringMessage.GetPersistentSubscriptionStats>,
@@ -143,32 +143,32 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			UnsubscribeFromStream(message.CorrelationId, true);
 		}
 
-		public void Handle(ClientMessage.CreatePersistentSubscription message) {
+		public void Handle(ClientMessage.CreatePersistentSubscriptionToStream message) {
 			if (!_started) return;
 			var key = BuildSubscriptionGroupKey(message.EventStreamId, message.GroupName);
 			Log.Debug("Creating persistent subscription {subscriptionKey}", key);
 
 			if (_subscriptionsById.ContainsKey(key)) {
-				message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionCompleted(
+				message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
 					message.CorrelationId,
-					ClientMessage.CreatePersistentSubscriptionCompleted.CreatePersistentSubscriptionResult
+					ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult
 						.AlreadyExists,
 					"Group '" + message.GroupName + "' already exists."));
 				return;
 			}
 
 			if (message.EventStreamId == null || message.EventStreamId == "" || message.EventStreamId == "$all") {
-				message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionCompleted(
+				message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
 					message.CorrelationId,
-					ClientMessage.CreatePersistentSubscriptionCompleted.CreatePersistentSubscriptionResult.Fail,
+					ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.Fail,
 					"Bad stream name."));
 				return;
 			}
 
 			if (!_consumerStrategyRegistry.ValidateStrategy(message.NamedConsumerStrategy)) {
-				message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionCompleted(
+				message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
 					message.CorrelationId,
-					ClientMessage.CreatePersistentSubscriptionCompleted.CreatePersistentSubscriptionResult.Fail,
+					ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.Fail,
 					string.Format("Consumer strategy {0} does not exist.", message.NamedConsumerStrategy)));
 				return;
 			}
@@ -210,28 +210,28 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				NamedConsumerStrategy = message.NamedConsumerStrategy,
 				StartFrom = message.StartFrom
 			});
-			SaveConfiguration(() => message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionCompleted(
+			SaveConfiguration(() => message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
 				message.CorrelationId,
-				ClientMessage.CreatePersistentSubscriptionCompleted.CreatePersistentSubscriptionResult.Success, "")));
+				ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.Success, "")));
 		}
 
-		public void Handle(ClientMessage.UpdatePersistentSubscription message) {
+		public void Handle(ClientMessage.UpdatePersistentSubscriptionToStream message) {
 			if (!_started) return;
 			var key = BuildSubscriptionGroupKey(message.EventStreamId, message.GroupName);
 			Log.Debug("Updating persistent subscription {subscriptionKey}", key);
 
 			if (!_subscriptionsById.ContainsKey(key)) {
-				message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionCompleted(
+				message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToStreamCompleted(
 					message.CorrelationId,
-					ClientMessage.UpdatePersistentSubscriptionCompleted.UpdatePersistentSubscriptionResult.DoesNotExist,
+					ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.DoesNotExist,
 					"Group '" + message.GroupName + "' does not exist."));
 				return;
 			}
 
 			if (!_consumerStrategyRegistry.ValidateStrategy(message.NamedConsumerStrategy)) {
-				message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionCompleted(
+				message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToStreamCompleted(
 					message.CorrelationId,
-					ClientMessage.UpdatePersistentSubscriptionCompleted.UpdatePersistentSubscriptionResult.Fail,
+					ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.Fail,
 					string.Format("Consumer strategy {0} does not exist.", message.NamedConsumerStrategy)));
 				return;
 			}
@@ -273,9 +273,9 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				NamedConsumerStrategy = message.NamedConsumerStrategy,
 				StartFrom = message.StartFrom
 			});
-			SaveConfiguration(() => message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionCompleted(
+			SaveConfiguration(() => message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToStreamCompleted(
 				message.CorrelationId,
-				ClientMessage.UpdatePersistentSubscriptionCompleted.UpdatePersistentSubscriptionResult.Success, "")));
+				ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.Success, "")));
 		}
 
 		private void CreateSubscriptionGroup(string eventStreamId,
@@ -326,24 +326,24 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			subscribers.Add(subscription);
 		}
 
-		public void Handle(ClientMessage.DeletePersistentSubscription message) {
+		public void Handle(ClientMessage.DeletePersistentSubscriptionToStream message) {
 			if (!_started) return;
 			var key = BuildSubscriptionGroupKey(message.EventStreamId, message.GroupName);
 			Log.Debug("Deleting persistent subscription {subscriptionKey}", key);
 
 			PersistentSubscription subscription;
 			if (!_subscriptionsById.TryGetValue(key, out subscription)) {
-				message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionCompleted(
+				message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(
 					message.CorrelationId,
-					ClientMessage.DeletePersistentSubscriptionCompleted.DeletePersistentSubscriptionResult.DoesNotExist,
+					ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.DoesNotExist,
 					"Group '" + message.GroupName + "' does not exist."));
 				return;
 			}
 
 			if (!_subscriptionTopics.ContainsKey(message.EventStreamId)) {
-				message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionCompleted(
+				message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(
 					message.CorrelationId,
-					ClientMessage.DeletePersistentSubscriptionCompleted.DeletePersistentSubscriptionResult.Fail,
+					ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.Fail,
 					"Group '" + message.GroupName + "' does not exist."));
 				return;
 			}
@@ -351,9 +351,9 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			RemoveSubscription(message.EventStreamId, message.GroupName);
 			RemoveSubscriptionConfig(message.User.Identity.Name, message.EventStreamId, message.GroupName);
 			subscription.Delete();
-			SaveConfiguration(() => message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionCompleted(
+			SaveConfiguration(() => message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(
 				message.CorrelationId,
-				ClientMessage.DeletePersistentSubscriptionCompleted.DeletePersistentSubscriptionResult.Success, "")));
+				ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.Success, "")));
 		}
 
 		private void RemoveSubscriptionConfig(string username, string eventStreamId, string groupName) {

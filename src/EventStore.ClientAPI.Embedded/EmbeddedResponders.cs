@@ -575,7 +575,7 @@ namespace EventStore.ClientAPI.Embedded {
 
 		internal class CreatePersistentSubscription :
 			EmbeddedResponderBase<PersistentSubscriptionCreateResult,
-				ClientMessage.CreatePersistentSubscriptionCompleted> {
+				ClientMessage.CreatePersistentSubscriptionToStreamCompleted> {
 			private readonly string _stream;
 			private readonly string _groupName;
 
@@ -586,22 +586,22 @@ namespace EventStore.ClientAPI.Embedded {
 				_stream = stream;
 			}
 
-			protected override void InspectResponse(ClientMessage.CreatePersistentSubscriptionCompleted response) {
+			protected override void InspectResponse(ClientMessage.CreatePersistentSubscriptionToStreamCompleted response) {
 				switch (response.Result) {
-					case ClientMessage.CreatePersistentSubscriptionCompleted.CreatePersistentSubscriptionResult.Success:
+					case ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.Success:
 						Succeed(response);
 						break;
-					case ClientMessage.CreatePersistentSubscriptionCompleted.CreatePersistentSubscriptionResult.Fail:
+					case ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.Fail:
 						Fail(new InvalidOperationException(String.Format(
 							"Subscription group {0} on stream {1} failed '{2}'", _groupName, _stream,
 							response.Reason)));
 						break;
-					case ClientMessage.CreatePersistentSubscriptionCompleted.CreatePersistentSubscriptionResult
+					case ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult
 						.AccessDenied:
 						Fail(new AccessDeniedException(string.Format("Write access denied for stream '{0}'.",
 							_stream)));
 						break;
-					case ClientMessage.CreatePersistentSubscriptionCompleted.CreatePersistentSubscriptionResult
+					case ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult
 						.AlreadyExists:
 						Fail(new InvalidOperationException(
 							String.Format("Subscription group {0} on stream {1} already exists", _groupName, _stream)));
@@ -612,14 +612,14 @@ namespace EventStore.ClientAPI.Embedded {
 			}
 
 			protected override PersistentSubscriptionCreateResult TransformResponse(
-				ClientMessage.CreatePersistentSubscriptionCompleted response) {
+				ClientMessage.CreatePersistentSubscriptionToStreamCompleted response) {
 				return new PersistentSubscriptionCreateResult((PersistentSubscriptionCreateStatus)response.Result);
 			}
 		}
 
 		internal class UpdatePersistentSubscription :
 			EmbeddedResponderBase<PersistentSubscriptionUpdateResult,
-				ClientMessage.UpdatePersistentSubscriptionCompleted> {
+				ClientMessage.UpdatePersistentSubscriptionToStreamCompleted> {
 			private readonly string _stream;
 			private readonly string _groupName;
 
@@ -630,22 +630,22 @@ namespace EventStore.ClientAPI.Embedded {
 				_stream = stream;
 			}
 
-			protected override void InspectResponse(ClientMessage.UpdatePersistentSubscriptionCompleted response) {
+			protected override void InspectResponse(ClientMessage.UpdatePersistentSubscriptionToStreamCompleted response) {
 				switch (response.Result) {
-					case ClientMessage.UpdatePersistentSubscriptionCompleted.UpdatePersistentSubscriptionResult.Success:
+					case ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.Success:
 						Succeed(response);
 						break;
-					case ClientMessage.UpdatePersistentSubscriptionCompleted.UpdatePersistentSubscriptionResult.Fail:
+					case ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.Fail:
 						Fail(new InvalidOperationException(String.Format(
 							"Subscription group {0} on stream {1} failed '{2}'", _groupName, _stream,
 							response.Reason)));
 						break;
-					case ClientMessage.UpdatePersistentSubscriptionCompleted.UpdatePersistentSubscriptionResult
+					case ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult
 						.AccessDenied:
 						Fail(new AccessDeniedException(string.Format("Write access denied for stream '{0}'.",
 							_stream)));
 						break;
-					case ClientMessage.UpdatePersistentSubscriptionCompleted.UpdatePersistentSubscriptionResult
+					case ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult
 						.DoesNotExist:
 						Fail(new InvalidOperationException(
 							String.Format("Subscription group {0} on stream {1} does not exist", _groupName, _stream)));
@@ -656,14 +656,14 @@ namespace EventStore.ClientAPI.Embedded {
 			}
 
 			protected override PersistentSubscriptionUpdateResult TransformResponse(
-				ClientMessage.UpdatePersistentSubscriptionCompleted response) {
+				ClientMessage.UpdatePersistentSubscriptionToStreamCompleted response) {
 				return new PersistentSubscriptionUpdateResult((PersistentSubscriptionUpdateStatus)response.Result);
 			}
 		}
 
 		internal class DeletePersistentSubscription :
 			EmbeddedResponderBase<PersistentSubscriptionDeleteResult,
-				ClientMessage.DeletePersistentSubscriptionCompleted> {
+				ClientMessage.DeletePersistentSubscriptionToStreamCompleted> {
 			private readonly string _stream;
 			private readonly string _groupName;
 
@@ -674,22 +674,22 @@ namespace EventStore.ClientAPI.Embedded {
 				_stream = stream;
 			}
 
-			protected override void InspectResponse(ClientMessage.DeletePersistentSubscriptionCompleted response) {
+			protected override void InspectResponse(ClientMessage.DeletePersistentSubscriptionToStreamCompleted response) {
 				switch (response.Result) {
-					case ClientMessage.DeletePersistentSubscriptionCompleted.DeletePersistentSubscriptionResult.Success:
+					case ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.Success:
 						Succeed(response);
 						break;
-					case ClientMessage.DeletePersistentSubscriptionCompleted.DeletePersistentSubscriptionResult.Fail:
+					case ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.Fail:
 						Fail(new InvalidOperationException(String.Format(
 							"Subscription group {0} on stream {1} failed '{2}'", _groupName, _stream,
 							response.Reason)));
 						break;
-					case ClientMessage.DeletePersistentSubscriptionCompleted.DeletePersistentSubscriptionResult
+					case ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult
 						.AccessDenied:
 						Fail(new AccessDeniedException(string.Format("Write access denied for stream '{0}'.",
 							_stream)));
 						break;
-					case ClientMessage.DeletePersistentSubscriptionCompleted.DeletePersistentSubscriptionResult
+					case ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult
 						.DoesNotExist:
 						Fail(new InvalidOperationException(
 							String.Format("Subscription group {0} on stream {1} does not exist", _groupName, _stream)));
@@ -700,7 +700,7 @@ namespace EventStore.ClientAPI.Embedded {
 			}
 
 			protected override PersistentSubscriptionDeleteResult TransformResponse(
-				ClientMessage.DeletePersistentSubscriptionCompleted response) {
+				ClientMessage.DeletePersistentSubscriptionToStreamCompleted response) {
 				return new PersistentSubscriptionDeleteResult((PersistentSubscriptionDeleteStatus)response.Result);
 			}
 		}

@@ -694,7 +694,7 @@ namespace EventStore.ClientAPI.Embedded {
 
 			var corrId = Guid.NewGuid();
 			_publisher.PublishWithAuthentication(_authenticationProvider, GetUserCredentials(_settings, credentials),
-				source.SetException, user => new ClientMessage.CreatePersistentSubscription(
+				source.SetException, user => new ClientMessage.CreatePersistentSubscriptionToStream(
 					corrId,
 					corrId,
 					envelope,
@@ -733,7 +733,7 @@ namespace EventStore.ClientAPI.Embedded {
 
 			var corrId = Guid.NewGuid();
 			_publisher.PublishWithAuthentication(_authenticationProvider, GetUserCredentials(_settings, credentials),
-				source.SetException, user => new ClientMessage.UpdatePersistentSubscription(
+				source.SetException, user => new ClientMessage.UpdatePersistentSubscriptionToStream(
 					corrId,
 					corrId,
 					envelope,
@@ -772,7 +772,7 @@ namespace EventStore.ClientAPI.Embedded {
 			var corrId = Guid.NewGuid();
 			_publisher.PublishWithAuthentication(_authenticationProvider,
 				GetUserCredentials(_settings, userCredentials), source.SetException, user =>
-					new ClientMessage.DeletePersistentSubscription(
+					new ClientMessage.DeletePersistentSubscriptionToStream(
 						corrId,
 						corrId,
 						envelope,

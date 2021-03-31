@@ -200,7 +200,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 
 				var semaphore = new SemaphoreSlim(1, 1);
 
-				publisher.Publish(new ClientMessage.ConnectToPersistentSubscription(correlationId, correlationId,
+				publisher.Publish(new ClientMessage.ConnectToPersistentSubscriptionToStream(correlationId, correlationId,
 					new ContinuationEnvelope(OnMessage, semaphore, _cancellationToken), correlationId, connectionName,
 					groupName, streamName, bufferSize, string.Empty, user));
 

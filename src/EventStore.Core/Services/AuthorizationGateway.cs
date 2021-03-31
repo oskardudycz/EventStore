@@ -62,7 +62,7 @@ namespace EventStore.Core.Services {
 					Array.Empty<ResolvedEvent>(), StreamMetadata.Empty, false, 0, TFPos.Invalid, TFPos.Invalid,
 					TFPos.Invalid, default);
 
-		private static readonly Func<ClientMessage.ConnectToPersistentSubscription, Message>
+		private static readonly Func<ClientMessage.ConnectToPersistentSubscriptionToStream, Message>
 			ConnectToPersistentSubscriptionDenied = msg =>
 				new ClientMessage.SubscriptionDropped(msg.CorrelationId, SubscriptionDropReason.AccessDenied);
 
@@ -150,7 +150,7 @@ namespace EventStore.Core.Services {
 				case ClientMessage.SubscribeToStream msg: 
 					Authorize(msg, destination);
 					break;
-				case ClientMessage.ConnectToPersistentSubscription msg:
+				case ClientMessage.ConnectToPersistentSubscriptionToStream msg:
 					Authorize(msg, destination);
 					break;
 				case ClientMessage.CreatePersistentSubscriptionToStream msg:
@@ -298,7 +298,7 @@ namespace EventStore.Core.Services {
 				CreatePersistentSubscriptionDenied);
 		}
 
-		private void Authorize(ClientMessage.ConnectToPersistentSubscription msg, IPublisher destination) {
+		private void Authorize(ClientMessage.ConnectToPersistentSubscriptionToStream msg, IPublisher destination) {
 			Authorize(msg.User,
 				ConnectToPersistentSubscription.WithParameter(
 					Operations.Subscriptions.Parameters.StreamId(msg.EventStreamId)), msg.Envelope, destination, msg,

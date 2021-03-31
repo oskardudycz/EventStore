@@ -35,7 +35,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 				"RoundRobin",
 				testUser, DateTime.UtcNow));
 
-			_node.Node.MainQueue.Handle(new ClientMessage.ConnectToPersistentSubscription(Guid.NewGuid(),
+			_node.Node.MainQueue.Handle(new ClientMessage.ConnectToPersistentSubscriptionToStream(Guid.NewGuid(),
 				Guid.NewGuid(), new CallbackEnvelope(message => {
 					_subscriptionDropped.Set();
 				}), Guid.NewGuid(), Guid.NewGuid().ToString(), group, streamId, 1, "0",

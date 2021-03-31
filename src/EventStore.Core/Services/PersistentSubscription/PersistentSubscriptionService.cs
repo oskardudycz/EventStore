@@ -24,7 +24,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		IHandle<ClientMessage.ReplayParkedMessages>,
 		IHandle<ClientMessage.ReplayParkedMessage>,
 		IHandle<SystemMessage.StateChangeMessage>,
-		IHandle<ClientMessage.ConnectToPersistentSubscription>,
+		IHandle<ClientMessage.ConnectToPersistentSubscriptionToStream>,
 		IHandle<StorageMessage.EventCommitted>,
 		IHandle<ClientMessage.UnsubscribeFromStream>,
 		IHandle<ClientMessage.PersistentSubscriptionAckEvents>,
@@ -692,7 +692,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			}
 		}
 
-		public void Handle(ClientMessage.ConnectToPersistentSubscription message) {
+		public void Handle(ClientMessage.ConnectToPersistentSubscriptionToStream message) {
 			if (!_started) return;
 			
 			List<PersistentSubscription> subscribers;
@@ -702,7 +702,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				return;
 			}
 
-			var key = BuildSubscriptionGroupKey(message.EventStreamId, message.SubscriptionId);
+			var key = BuildSubscriptionGroupKey(message.EventStreamId, message.GroupName);
 			PersistentSubscription subscription;
 			if (!_subscriptionsById.TryGetValue(key, out subscription)) {
 				message.Envelope.ReplyWith(new ClientMessage.SubscriptionDropped(message.CorrelationId,

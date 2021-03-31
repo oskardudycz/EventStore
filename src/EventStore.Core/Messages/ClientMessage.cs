@@ -1062,25 +1062,25 @@ namespace EventStore.Core.Messages {
 		}
 
 		//Persistent subscriptions
-		public class ConnectToPersistentSubscription : ReadRequestMessage {
+		public class ConnectToPersistentSubscriptionToStream : ReadRequestMessage {
 			private static readonly int TypeId = Interlocked.Increment(ref NextMsgId);
 			public override int MsgTypeId { get { return TypeId; } }
 
 			public readonly Guid ConnectionId;
 			public readonly string ConnectionName;
-			public readonly string SubscriptionId;
+			public readonly string GroupName;
 			public readonly string EventStreamId;
 			public readonly int AllowedInFlightMessages;
 			public readonly string From;
 
-			public ConnectToPersistentSubscription(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
-				Guid connectionId, string connectionName, string subscriptionId, string eventStreamId,
+			public ConnectToPersistentSubscriptionToStream(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
+				Guid connectionId, string connectionName, string groupName, string eventStreamId,
 				int allowedInFlightMessages, string from, ClaimsPrincipal user, DateTime? expires = null)
 				: base(internalCorrId, correlationId, envelope, user, expires) {
 				Ensure.NotEmptyGuid(connectionId, "connectionId");
-				Ensure.NotNullOrEmpty(subscriptionId, "subscriptionId");
+				Ensure.NotNullOrEmpty(groupName, "subscriptionId");
 				Ensure.Nonnegative(allowedInFlightMessages, "AllowedInFlightMessages");
-				SubscriptionId = subscriptionId;
+				GroupName = groupName;
 				ConnectionId = connectionId;
 				ConnectionName = connectionName;
 				AllowedInFlightMessages = allowedInFlightMessages;

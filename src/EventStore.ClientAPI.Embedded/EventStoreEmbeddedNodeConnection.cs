@@ -103,7 +103,7 @@ namespace EventStore.ClientAPI.Embedded {
 			_subscriptionBus.Subscribe(new AdHocHandler<ClientMessage.FilteredSubscribeToStream>(_publisher.Publish));
 			_subscriptionBus.Subscribe(new AdHocHandler<ClientMessage.UnsubscribeFromStream>(_publisher.Publish));
 			_subscriptionBus.Subscribe(
-				new AdHocHandler<ClientMessage.ConnectToPersistentSubscription>(_publisher.Publish));
+				new AdHocHandler<ClientMessage.ConnectToPersistentSubscriptionToStream>(_publisher.Publish));
 			_subscriptionBus.Subscribe(
 				new AdHocHandler<ClientMessage.PersistentSubscriptionAckEvents>(_publisher.Publish));
 			_subscriptionBus.Subscribe(

@@ -150,7 +150,7 @@ namespace EventStore.Core.Services.VNode {
 				.When<ClientMessage.TransactionCommit>().ForwardTo(_outputBus)
 				.When<ClientMessage.DeleteStream>().ForwardTo(_outputBus)
 				.When<ClientMessage.CreatePersistentSubscriptionToStream>().ForwardTo(_outputBus)
-				.When<ClientMessage.ConnectToPersistentSubscription>().ForwardTo(_outputBus)
+				.When<ClientMessage.ConnectToPersistentSubscriptionToStream>().ForwardTo(_outputBus)
 				.When<ClientMessage.UpdatePersistentSubscriptionToStream>().ForwardTo(_outputBus)
 				.When<ClientMessage.DeletePersistentSubscriptionToStream>().ForwardTo(_outputBus)
 				.When<SystemMessage.InitiateLeaderResignation>().Do(Handle)
@@ -167,7 +167,7 @@ namespace EventStore.Core.Services.VNode {
 				.When<ClientMessage.TransactionCommit>().Ignore()
 				.When<ClientMessage.DeleteStream>().Ignore()
 				.When<ClientMessage.CreatePersistentSubscriptionToStream>().Ignore()
-				.When<ClientMessage.ConnectToPersistentSubscription>().Ignore()
+				.When<ClientMessage.ConnectToPersistentSubscriptionToStream>().Ignore()
 				.When<ClientMessage.UpdatePersistentSubscriptionToStream>().Ignore()
 				.When<ClientMessage.DeletePersistentSubscriptionToStream>().Ignore()
 				.When<SystemMessage.RequestQueueDrained>().Do(Handle)
@@ -184,7 +184,7 @@ namespace EventStore.Core.Services.VNode {
 				.When<ClientMessage.FilteredReadAllEventsForward>().Do(HandleAsNonLeader)
 				.When<ClientMessage.FilteredReadAllEventsBackward>().Do(HandleAsNonLeader)
 				.When<ClientMessage.CreatePersistentSubscriptionToStream>().Do(HandleAsNonLeader)
-				.When<ClientMessage.ConnectToPersistentSubscription>().Do(HandleAsNonLeader)
+				.When<ClientMessage.ConnectToPersistentSubscriptionToStream>().Do(HandleAsNonLeader)
 				.When<ClientMessage.UpdatePersistentSubscriptionToStream>().Do(HandleAsNonLeader)
 				.When<ClientMessage.DeletePersistentSubscriptionToStream>().Do(HandleAsNonLeader)
 				.InStates(VNodeState.ReadOnlyLeaderless, VNodeState.PreReadOnlyReplica, VNodeState.ReadOnlyReplica)
@@ -663,7 +663,7 @@ namespace EventStore.Core.Services.VNode {
 				DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
 		}
 
-		private void HandleAsNonLeader(ClientMessage.ConnectToPersistentSubscription message) {
+		private void HandleAsNonLeader(ClientMessage.ConnectToPersistentSubscriptionToStream message) {
 			if (_leader == null)
 				DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 			else

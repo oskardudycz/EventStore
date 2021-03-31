@@ -43,7 +43,7 @@ namespace EventStore.ClientAPI.Embedded {
 
 			Publisher.PublishWithAuthentication(_authenticationProvider, _userCredentials,
 				ex => DropSubscription(EventStore.Core.Services.SubscriptionDropReason.AccessDenied, ex),
-				user => new ClientMessage.ConnectToPersistentSubscription(correlationId, correlationId,
+				user => new ClientMessage.ConnectToPersistentSubscriptionToStream(correlationId, correlationId,
 					new PublishEnvelope(Publisher, true), ConnectionId, _connectionName, _subscriptionId, StreamId, _bufferSize,
 					String.Empty,
 					user));

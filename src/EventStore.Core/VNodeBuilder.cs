@@ -31,8 +31,8 @@ using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core {
 	/// <summary>
-	/// Allows a client to build a <see cref="ClusterVNode" /> for use with the Embedded client API by specifying
-	/// high level options rather than using the constructor of <see cref="ClusterVNode"/> directly.
+	/// Allows a client to build a <see cref="IClusterVNode" /> for use with the Embedded client API by specifying
+	/// high level options rather than using the constructor of <see cref="IClusterVNode"/> directly.
 	/// </summary>
 	public abstract class VNodeBuilder {
 		// ReSharper disable FieldCanBeMadeReadOnly.Local - as more options are added
@@ -1393,11 +1393,11 @@ namespace EventStore.Core {
 		protected abstract void SetUpProjectionsIfNeeded();
 
 		/// <summary>
-		/// Converts an <see cref="VNodeBuilder"/> to a <see cref="ClusterVNode"/>.
+		/// Converts an <see cref="VNodeBuilder"/> to a <see cref="IClusterVNode"/>.
 		/// </summary>
 		/// <param name="options">The options with which to build the infoController</param>
 		/// <param name="consumerStrategies">The consumer strategies with which to build the node</param>
-		/// <returns>A <see cref="ClusterVNode"/> built with the options that were set on the <see cref="VNodeBuilder"/></returns>
+		/// <returns>A <see cref="IClusterVNode"/> built with the options that were set on the <see cref="VNodeBuilder"/></returns>
 		public IClusterVNode Build(IOptions options = null,
 			IPersistentSubscriptionConsumerStrategyFactory[] consumerStrategies = null) {
 			SetUpProjectionsIfNeeded();

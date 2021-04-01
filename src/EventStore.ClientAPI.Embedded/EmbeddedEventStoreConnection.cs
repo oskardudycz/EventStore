@@ -18,7 +18,7 @@ namespace EventStore.ClientAPI.Embedded {
 		/// <summary>
 		/// Creates a new embedded <see cref="IEventStoreConnection"/> to single node with default connection settings
 		/// </summary>
-		/// <param name="eventStore">The <see cref="ClusterVNode" /> to connect to. The node must already be running.</param>
+		/// <param name="eventStore">The <see cref="IClusterVNode" /> to connect to. The node must already be running.</param>
 		/// <param name="connectionName">Optional name of connection (will be generated automatically, if not provided)</param>
 		/// <returns></returns>
 		public static IEventStoreConnection Create(IClusterVNode eventStore, string connectionName = null) {
@@ -28,7 +28,7 @@ namespace EventStore.ClientAPI.Embedded {
 		/// <summary>
 		/// Creates a new embedded <see cref="IEventStoreConnection"/> to single node using specific <see cref="ConnectionSettings"/>
 		/// </summary>
-		/// <param name="eventStore">The <see cref="ClusterVNode" /> to connect to. The node must already be running.</param>
+		/// <param name="eventStore">The <see cref="IClusterVNode" /> to connect to. The node must already be running.</param>
 		/// <param name="connectionSettings">The <see cref="ConnectionSettings"/> to apply to the new connection</param>
 		/// <param name="connectionName">Optional name of connection (will be generated automatically, if not provided)</param>
 		/// <returns></returns>

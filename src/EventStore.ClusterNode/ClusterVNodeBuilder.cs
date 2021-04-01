@@ -3,8 +3,8 @@ using EventStore.Projections.Core;
 
 namespace EventStore.ClusterNode {
 	/// <summary>
-	/// Allows a client to build a <see cref="ClusterVNode" /> for use in EventStore.ClusterNode by specifying
-	/// high level options rather than using the constructor of <see cref="ClusterVNode"/> directly.
+	/// Allows a client to build a <see cref="IClusterVNode" /> for use in EventStore.ClusterNode by specifying
+	/// high level options rather than using the constructor of <see cref="IClusterVNode"/> directly.
 	/// </summary>
 	public class ClusterVNodeBuilder : VNodeBuilder {
 		protected ClusterVNodeBuilder() {

@@ -16,7 +16,7 @@ namespace EventStore.Core.TransactionLog.Chunks {
 		private readonly TimeSpan _scavengeHistoryMaxAge;
 		private readonly IODispatcher _ioDispatcher;
 		private const int MaxRetryCount = 5;
-		private static readonly ILogger Log = Serilog.Log.ForContext<StorageScavenger>();
+		private static readonly ILogger Log = Serilog.Log.ForContext<TFChunkScavengerLogManager>(); //qq semantic change
 		private int _isInitialised;
 
 		public TFChunkScavengerLogManager(string nodeEndpoint, TimeSpan scavengeHistoryMaxAge,

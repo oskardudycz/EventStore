@@ -28,9 +28,11 @@ using ElectionsService = EventStore.Core.Services.Transport.Grpc.Cluster.Electio
 using Operations = EventStore.Core.Services.Transport.Grpc.Operations;
 using ClusterGossip = EventStore.Core.Services.Transport.Grpc.Cluster.Gossip;
 using ClientGossip = EventStore.Core.Services.Transport.Grpc.Gossip;
+using EventStore.Core.Services.Storage;
+using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core {
-	public class ClusterVNodeStartup : IStartup, IHandle<SystemMessage.SystemReady>,
+	public class ClusterVNodeStartup<TStreamId> : IStartup, IHandle<SystemMessage.SystemReady>,
 		IHandle<SystemMessage.BecomeShuttingDown> {
 
 		private readonly ISubsystem[] _subsystems;
@@ -38,7 +40,7 @@ namespace EventStore.Core {
 		private readonly ISubscriber _mainBus;
 		private readonly IAuthenticationProvider _authenticationProvider;
 		private readonly IReadOnlyList<IHttpAuthenticationProvider> _httpAuthenticationProviders;
-		private readonly IReadIndex _readIndex;
+		private readonly IReadIndex<TStreamId> _readIndex;
 		private readonly int _maxAppendSize;
 		private readonly KestrelHttpService _httpService;
 		private readonly StatusCheck _statusCheck;
@@ -55,7 +57,7 @@ namespace EventStore.Core {
 			IAuthenticationProvider authenticationProvider,
 			IReadOnlyList<IHttpAuthenticationProvider> httpAuthenticationProviders,
 			IAuthorizationProvider authorizationProvider,
-			IReadIndex readIndex,
+			IReadIndex<TStreamId> readIndex,
 			int maxAppendSize,
 			KestrelHttpService httpService) {
 			if (subsystems == null) {
@@ -121,7 +123,7 @@ namespace EventStore.Core {
 				)
 				.UseEndpoints(ep => ep.MapGrpcService<PersistentSubscriptions>())
 				.UseEndpoints(ep => ep.MapGrpcService<Users>())
-				.UseEndpoints(ep => ep.MapGrpcService<Streams>())
+				.UseEndpoints(ep => ep.MapGrpcService<Streams<TStreamId>>())
 				.UseEndpoints(ep => ep.MapGrpcService<ClusterGossip>())
 				.UseEndpoints(ep => ep.MapGrpcService<Elections>())
 				.UseEndpoints(ep => ep.MapGrpcService<Operations>())
@@ -144,7 +146,7 @@ namespace EventStore.Core {
 						.AddSingleton<AuthorizationMiddleware>()
 						.AddSingleton(new KestrelToInternalBridgeMiddleware(_httpService.UriRouter, _httpService.LogHttpRequests, _httpService.AdvertiseAsHost, _httpService.AdvertiseAsPort))
 						.AddSingleton(_readIndex)
-						.AddSingleton(new Streams(_mainQueue, _readIndex, _maxAppendSize, _authorizationProvider))
+						.AddSingleton(new Streams<TStreamId>(_mainQueue, _readIndex, _maxAppendSize, _authorizationProvider))
 						.AddSingleton(new PersistentSubscriptions(_mainQueue, _authorizationProvider))
 						.AddSingleton(new Users(_mainQueue, _authorizationProvider))
 						.AddSingleton(new Operations(_mainQueue, _authorizationProvider))
@@ -152,7 +154,7 @@ namespace EventStore.Core {
 						.AddSingleton(new Elections(_mainQueue, _authorizationProvider))
 						.AddSingleton(new ClientGossip(_mainQueue, _authorizationProvider))
 						.AddGrpc()
-						.AddServiceOptions<Streams>(options =>
+						.AddServiceOptions<Streams<TStreamId>>(options =>
 							options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize)
 						.Services,
 					(s, subsystem) => subsystem.ConfigureServices(s));
@@ -162,9 +164,9 @@ namespace EventStore.Core {
 		public void Handle(SystemMessage.BecomeShuttingDown _) => _ready = false;
 
 		private class StatusCheck {
-			private readonly ClusterVNodeStartup _startup;
+			private readonly ClusterVNodeStartup<TStreamId> _startup;
 
-			public StatusCheck(ClusterVNodeStartup startup) {
+			public StatusCheck(ClusterVNodeStartup<TStreamId> startup) {
 				if (startup == null) {
 					throw new ArgumentNullException(nameof(startup));
 				}

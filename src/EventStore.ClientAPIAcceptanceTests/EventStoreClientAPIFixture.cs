@@ -10,7 +10,7 @@ using Xunit;
 
 namespace EventStore.ClientAPI.Tests {
 	public partial class EventStoreClientAPIFixture : IAsyncLifetime, IAsyncDisposable {
-		private readonly ClusterVNode _node;
+		private readonly IClusterVNode _node;
 		public IDictionary<bool, IEventStoreConnection> Connections { get; }
 
 		public EventStoreClientAPIFixture() {

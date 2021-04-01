@@ -15,11 +15,17 @@ using EventStore.Core.Util;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage {
+	public abstract class SimpleDbTestScenario : SimpleDbTestScenario<string> {
+		protected SimpleDbTestScenario(int maxEntriesInMemTable = 20, long metastreamMaxCount = 1) 
+			: base(maxEntriesInMemTable, metastreamMaxCount) {
+		}
+	}
+
 	[TestFixture]
-	public abstract class SimpleDbTestScenario : SpecificationWithDirectoryPerTestFixture {
+	public abstract class SimpleDbTestScenario<TStreamId> : SpecificationWithDirectoryPerTestFixture {
 		protected readonly int MaxEntriesInMemTable;
-		protected TableIndex TableIndex;
-		protected IReadIndex ReadIndex;
+		protected TableIndex<TStreamId> TableIndex;
+		protected IReadIndex<TStreamId> ReadIndex;
 
 		protected DbResult DbRes;
 
@@ -45,12 +51,13 @@ namespace EventStore.Core.Tests.Services.Storage {
 			DbRes.Db.Config.ChaserCheckpoint.Write(DbRes.Db.Config.WriterCheckpoint.Read());
 			DbRes.Db.Config.ChaserCheckpoint.Flush();
 
+			var logFormat = LogFormatHelper<TStreamId>.LogFormat;
 			var readers = new ObjectPool<ITransactionFileReader>(
 				"Readers", 2, 2, () => new TFChunkReader(DbRes.Db, DbRes.Db.Config.WriterCheckpoint));
 
-			var lowHasher = new XXHashUnsafe();
-			var highHasher = new Murmur3AUnsafe();
-			TableIndex = new TableIndex(GetFilePathFor("index"), lowHasher, highHasher,
+			var lowHasher = logFormat.LowHasher;
+			var highHasher = logFormat.HighHasher;
+			TableIndex = new TableIndex<TStreamId>(GetFilePathFor("index"), lowHasher, highHasher,
 				() => new HashListMemTable(PTableVersions.IndexV2, MaxEntriesInMemTable * 2),
 				() => new TFReaderLease(readers),
 				PTableVersions.IndexV2,
@@ -58,9 +65,14 @@ namespace EventStore.Core.Tests.Services.Storage {
 				Constants.PTableMaxReaderCountDefault,
 				MaxEntriesInMemTable);
 
-			ReadIndex = new ReadIndex(new NoopPublisher(),
+			ReadIndex = new ReadIndex<TStreamId>(new NoopPublisher(),
 				readers,
 				TableIndex,
+				logFormat.StreamIdsReadOnly,
+				logFormat.StreamNamesFactory,
+				logFormat.SystemStreams,
+				logFormat.StreamIdValidator,
+				logFormat.StreamIdSizer,
 				0,
 				additionalCommitChecks: true,
 				metastreamMaxCount: _metastreamMaxCount,
@@ -69,7 +81,7 @@ namespace EventStore.Core.Tests.Services.Storage {
 				replicationCheckpoint: DbRes.Db.Config.ReplicationCheckpoint,
 				indexCheckpoint: DbRes.Db.Config.IndexCheckpoint);
 
-			((ReadIndex)ReadIndex).IndexCommitter.Init(DbRes.Db.Config.ChaserCheckpoint.Read());
+			((ReadIndex<TStreamId>)ReadIndex).IndexCommitter.Init(DbRes.Db.Config.ChaserCheckpoint.Read());
 		}
 
 		public override Task TestFixtureTearDown() {

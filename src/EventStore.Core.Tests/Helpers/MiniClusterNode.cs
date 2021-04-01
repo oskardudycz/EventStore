@@ -31,6 +31,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.AspNetCore.TestHost;
 using ILogger = Serilog.ILogger;
+using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core.Tests.Helpers {
 	public class MiniClusterNode {
@@ -52,7 +53,7 @@ namespace EventStore.Core.Tests.Helpers {
 
 		public readonly int DebugIndex;
 
-		public readonly ClusterVNode Node;
+		public readonly IClusterVNode Node;
 		public readonly TFChunkDb Db;
 		private readonly string _dbPath;
 		private readonly bool _isReadOnlyReplica;
@@ -159,7 +160,7 @@ namespace EventStore.Core.Tests.Helpers {
 				ExternalTcpEndPoint, "ExTCP SECURE ENDPOINT:", ExternalTcpSecEndPoint, "ExHTTP ENDPOINT:",
 				HttpEndPoint);
 
-			Node = new ClusterVNode(Db, singleVNodeSettings,
+			Node = new ClusterVNode<string>(Db, singleVNodeSettings, LogFormatAbstractor.V2,
 				infoControllerBuilder: new InfoControllerBuilder()
 				, subsystems: subsystems,
 				gossipSeedSource: new KnownEndpointGossipSeedSource(gossipSeeds));
@@ -176,7 +177,7 @@ namespace EventStore.Core.Tests.Helpers {
 								ClientCertificateMode = ClientCertificateMode.AllowCertificate,
 								ClientCertificateValidation = (certificate, chain, sslPolicyErrors) => {
 									var (isValid, error) =
-										ClusterVNode.ValidateClientCertificateWithTrustedRootCerts(certificate, chain, sslPolicyErrors, () => trustedRootCertificates);
+										ClusterVNode<string>.ValidateClientCertificateWithTrustedRootCerts(certificate, chain, sslPolicyErrors, () => trustedRootCertificates);
 									if (!isValid && error != null) {
 										Log.Error("Client certificate validation error: {e}", error);
 									}

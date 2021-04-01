@@ -34,7 +34,7 @@ namespace EventStore.Core.Tests.Helpers {
 		public IPEndPoint IntTcpEndPoint { get; private set; }
 		public IPEndPoint IntSecTcpEndPoint { get; private set; }
 		public IPEndPoint HttpEndPoint { get; private set; }
-		public readonly ClusterVNode Node;
+		public readonly IClusterVNode Node;
 		public readonly TFChunkDb Db;
 		public readonly string DbPath;
 		public readonly HttpClient HttpClient;

@@ -18,9 +18,13 @@ using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Core.Util;
 using System.IO;
 using System.Threading.Tasks;
+using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit {
-	public abstract class MiniNodeWithExistingRecords : SpecificationWithDirectoryPerTestFixture {
+	public abstract class MiniNodeWithExistingRecords : MiniNodeWithExistingRecords<string> {
+	}
+
+	public abstract class MiniNodeWithExistingRecords<TStreamId> : SpecificationWithDirectoryPerTestFixture {
 		private readonly TcpType _tcpType = TcpType.Normal;
 		protected MiniNode Node;
 
@@ -28,8 +32,8 @@ namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit {
 		protected readonly long MetastreamMaxCount = 1;
 		protected readonly bool PerformAdditionalCommitChecks = true;
 		protected readonly byte IndexBitnessVersion = Opts.IndexBitnessVersionDefault;
-		protected TableIndex TableIndex;
-		protected IReadIndex ReadIndex;
+		protected TableIndex<TStreamId> TableIndex;
+		protected IReadIndex<TStreamId> ReadIndex;
 
 		protected TFChunkDb Db;
 		protected TFChunkWriter Writer;
@@ -98,13 +102,17 @@ namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit {
 		public abstract void WriteTestScenario();
 		public abstract Task Given();
 
-		protected EventRecord WriteSingleEvent(string eventStreamId,
+		protected EventRecord WriteSingleEvent(TStreamId eventStreamId,
 			long eventNumber,
 			string data,
 			DateTime? timestamp = null,
 			Guid eventId = default(Guid),
 			string eventType = "some-type") {
-			var prepare = LogRecord.SingleWrite(WriterCheckpoint.ReadNonFlushed(),
+
+			var logFormat = LogFormatHelper<TStreamId>.LogFormat;
+			var prepare = LogRecord.SingleWrite(
+				logFormat.RecordFactory,
+				WriterCheckpoint.ReadNonFlushed(),
 				eventId == default(Guid) ? Guid.NewGuid() : eventId,
 				Guid.NewGuid(),
 				eventStreamId,
@@ -119,7 +127,8 @@ namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit {
 				eventNumber);
 			Assert.IsTrue(Writer.Write(commit, out pos));
 
-			var eventRecord = new EventRecord(eventNumber, prepare);
+			var streamName = logFormat.StreamNamesFactory.Create().LookupName(prepare.EventStreamId);
+			var eventRecord = new EventRecord(eventNumber, prepare, streamName);
 			return eventRecord;
 		}
 	}

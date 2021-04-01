@@ -12,9 +12,10 @@ using EventStore.Core.Services.Histograms;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Messaging;
 using ILogger = Serilog.ILogger;
+using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core.Services.Storage {
-	public class StorageReaderWorker : IHandle<ClientMessage.ReadEvent>,
+	public class StorageReaderWorker<TStreamId> : IHandle<ClientMessage.ReadEvent>,
 		IHandle<ClientMessage.ReadStreamEventsBackward>,
 		IHandle<ClientMessage.ReadStreamEventsForward>,
 		IHandle<ClientMessage.ReadAllEventsForward>,
@@ -23,11 +24,12 @@ namespace EventStore.Core.Services.Storage {
 		IHandle<StorageMessage.EffectiveStreamAclRequest>,
 		IHandle<StorageMessage.StreamIdFromTransactionIdRequest>,
 		IHandle<StorageMessage.BatchLogExpiredMessages>, IHandle<ClientMessage.FilteredReadAllEventsBackward> {
-		private static readonly ILogger Log = Serilog.Log.ForContext<StorageReaderWorker>();
+		private static readonly ILogger Log = Serilog.Log.ForContext<StorageReaderWorker<TStreamId>>();
 		private static readonly ResolvedEvent[] EmptyRecords = new ResolvedEvent[0];
 
 		private readonly IPublisher _publisher;
-		private readonly IReadIndex _readIndex;
+		private readonly IReadIndex<TStreamId> _readIndex;
+		private readonly ISystemStreamLookup<TStreamId> _systemStreams;
 		private readonly IReadOnlyCheckpoint _writerCheckpoint;
 		private readonly int _queueId;
 		private static readonly char[] LinkToSeparator = { '@' };
@@ -39,14 +41,20 @@ namespace EventStore.Core.Services.Storage {
 		private long _expiredBatchCount;
 		private bool _batchLoggingEnabled;
 
-		public StorageReaderWorker(IPublisher publisher, IReadIndex readIndex, IReadOnlyCheckpoint writerCheckpoint,
+		public StorageReaderWorker(
+			IPublisher publisher,
+			IReadIndex<TStreamId> readIndex,
+			ISystemStreamLookup<TStreamId> systemStreams,
+			IReadOnlyCheckpoint writerCheckpoint,
 			int queueId) {
 			Ensure.NotNull(publisher, "publisher");
 			Ensure.NotNull(readIndex, "readIndex");
+			Ensure.NotNull(systemStreams, nameof(systemStreams));
 			Ensure.NotNull(writerCheckpoint, "writerCheckpoint");
 
 			_publisher = publisher;
 			_readIndex = readIndex;
+			_systemStreams = systemStreams;
 			_writerCheckpoint = writerCheckpoint;
 			_queueId = queueId;
 		}
@@ -80,7 +88,7 @@ namespace EventStore.Core.Services.Storage {
 					case ReadStreamResult.NotModified:
 						if (msg.LongPollTimeout.HasValue && res.FromEventNumber > res.LastEventNumber) {
 							_publisher.Publish(new SubscriptionMessage.PollStream(
-								msg.EventStreamId, res.TfLastCommitPosition, res.LastEventNumber,
+								msg.EventStreamId, res.TfLastCommitPosition, res.LastEventNumber, //qqqq hum is string ok here?
 								DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
 						} else {
 							msg.Envelope.ReplyWith(res);
@@ -248,15 +256,16 @@ namespace EventStore.Core.Services.Storage {
 				msg.Envelope.ReplyWith(new StorageMessage.OperationCancelledMessage(msg.CancellationToken));
 				return;
 			}
-			var acl = _readIndex.GetEffectiveAcl(msg.StreamId);
+			var acl = _readIndex.GetEffectiveAcl(_readIndex.GetStreamId(msg.StreamId));
 			msg.Envelope.ReplyWith(new StorageMessage.EffectiveStreamAclResponse(acl));
 		}
 
 		private ClientMessage.ReadEventCompleted ReadEvent(ClientMessage.ReadEvent msg) {
 			using (HistogramService.Measure(ReaderReadHistogram)) {
 				try {
-
-					var result = _readIndex.ReadEvent(msg.EventStreamId, msg.EventNumber);
+					var streamName = msg.EventStreamId;
+					var streamId = _readIndex.GetStreamId(streamName);
+					var result = _readIndex.ReadEvent(streamName, streamId, msg.EventNumber);
 					var record = result.Result == ReadEventResult.Success && msg.ResolveLinkTos
 						? ResolveLinkToEvent(result.Record, msg.User, null)
 						: ResolvedEvent.ForUnresolvedEvent(result.Record);
@@ -265,7 +274,7 @@ namespace EventStore.Core.Services.Storage {
 					if ((result.Result == ReadEventResult.NoStream ||
 						 result.Result == ReadEventResult.NotFound) &&
 						result.OriginalStreamExists &&
-						SystemStreams.IsSystemStream(msg.EventStreamId)) {
+						_systemStreams.IsSystemStream(streamId)) {
 						return NoData(msg, ReadEventResult.Success);
 					}
 
@@ -287,13 +296,15 @@ namespace EventStore.Core.Services.Storage {
 						throw new ArgumentException($"Read size too big, should be less than {MaxPageSize} items");
 					}
 
+					var streamName = msg.EventStreamId;
+					var streamId = _readIndex.GetStreamId(msg.EventStreamId);
 					if (msg.ValidationStreamVersion.HasValue &&
-						_readIndex.GetStreamLastEventNumber(msg.EventStreamId) == msg.ValidationStreamVersion)
+						_readIndex.GetStreamLastEventNumber(streamId) == msg.ValidationStreamVersion)
 						return NoData(msg, ReadStreamResult.NotModified, lastIndexPosition,
 							msg.ValidationStreamVersion.Value);
 
 					var result =
-						_readIndex.ReadStreamEventsForward(msg.EventStreamId, msg.FromEventNumber, msg.MaxCount);
+						_readIndex.ReadStreamEventsForward(streamName, streamId, msg.FromEventNumber, msg.MaxCount);
 					CheckEventsOrder(msg, result);
 					var resolvedPairs = ResolveLinkToEvents(result.Records, msg.ResolveLinkTos, msg.User);
 					if (resolvedPairs == null)
@@ -319,13 +330,15 @@ namespace EventStore.Core.Services.Storage {
 						throw new ArgumentException($"Read size too big, should be less than {MaxPageSize} items");
 					}
 
+					var streamName = msg.EventStreamId;
+					var streamId = _readIndex.GetStreamId(msg.EventStreamId);
 					if (msg.ValidationStreamVersion.HasValue &&
-						_readIndex.GetStreamLastEventNumber(msg.EventStreamId) == msg.ValidationStreamVersion)
+						_readIndex.GetStreamLastEventNumber(streamId) == msg.ValidationStreamVersion)
 						return NoData(msg, ReadStreamResult.NotModified, lastIndexedPosition,
 							msg.ValidationStreamVersion.Value);
 
 
-					var result = _readIndex.ReadStreamEventsBackward(msg.EventStreamId, msg.FromEventNumber,
+					var result = _readIndex.ReadStreamEventsBackward(streamName, streamId, msg.FromEventNumber,
 						msg.MaxCount);
 					CheckEventsOrder(msg, result);
 					var resolvedPairs = ResolveLinkToEvents(result.Records, msg.ResolveLinkTos, msg.User);
@@ -368,7 +381,7 @@ namespace EventStore.Core.Services.Storage {
 					if (resolved == null)
 						return NoData(msg, ReadAllResult.AccessDenied, pos, lastIndexedPosition);
 
-					var metadata = _readIndex.GetStreamMetadata(SystemStreams.AllStream);
+					var metadata = _readIndex.GetStreamMetadata(_systemStreams.AllStream);
 					return new ClientMessage.ReadAllEventsForwardCompleted(
 						msg.CorrelationId, ReadAllResult.Success, null, resolved, metadata, false, msg.MaxCount,
 						res.CurrentPos, res.NextPos, res.PrevPos, lastIndexedPosition);
@@ -404,7 +417,7 @@ namespace EventStore.Core.Services.Storage {
 					if (resolved == null)
 						return NoData(msg, ReadAllResult.AccessDenied, pos, lastIndexedPosition);
 
-					var metadata = _readIndex.GetStreamMetadata(SystemStreams.AllStream);
+					var metadata = _readIndex.GetStreamMetadata(_systemStreams.AllStream);
 					return new ClientMessage.ReadAllEventsBackwardCompleted(
 						msg.CorrelationId, ReadAllResult.Success, null, resolved, metadata, false, msg.MaxCount,
 						res.CurrentPos, res.NextPos, res.PrevPos, lastIndexedPosition);
@@ -444,7 +457,7 @@ namespace EventStore.Core.Services.Storage {
 						return NoDataForFilteredCommand(msg, FilteredReadAllResult.AccessDenied, pos,
 							lastIndexedPosition);
 
-					var metadata = _readIndex.GetStreamMetadata(SystemStreams.AllStream);
+					var metadata = _readIndex.GetStreamMetadata(_systemStreams.AllStream);
 					return new ClientMessage.FilteredReadAllEventsForwardCompleted(
 						msg.CorrelationId, FilteredReadAllResult.Success, null, resolved, metadata, false,
 						msg.MaxCount,
@@ -487,7 +500,7 @@ namespace EventStore.Core.Services.Storage {
 						return NoDataForFilteredCommand(msg, FilteredReadAllResult.AccessDenied, pos,
 							lastIndexedPosition);
 
-					var metadata = _readIndex.GetStreamMetadata(SystemStreams.AllStream);
+					var metadata = _readIndex.GetStreamMetadata(_systemStreams.AllStream);
 					return new ClientMessage.FilteredReadAllEventsBackwardCompleted(
 						msg.CorrelationId, FilteredReadAllResult.Success, null, resolved, metadata, false,
 						msg.MaxCount,
@@ -595,9 +608,9 @@ namespace EventStore.Core.Services.Storage {
 					var linkPayload = Helper.UTF8NoBom.GetString(eventRecord.Data.Span);
 					var parts = linkPayload.Split(LinkToSeparator, 2);
 					if (long.TryParse(parts[0], out long eventNumber)) {
-						var streamId = parts[1];
-
-						var res = _readIndex.ReadEvent(streamId, eventNumber);
+						var streamName = parts[1];
+						var streamId = _readIndex.GetStreamId(streamName);
+						var res = _readIndex.ReadEvent(streamName, streamId, eventNumber);
 						if (res.Result == ReadEventResult.Success)
 							return ResolvedEvent.ForResolvedLink(res.Record, eventRecord, commitPosition);
 
@@ -699,7 +712,8 @@ namespace EventStore.Core.Services.Storage {
 				message.Envelope.ReplyWith(new StorageMessage.OperationCancelledMessage(message.CancellationToken));
 			}
 			var streamId = _readIndex.GetEventStreamIdByTransactionId(message.TransactionId);
-			message.Envelope.ReplyWith(new StorageMessage.StreamIdFromTransactionIdResponse(streamId));
+			var streamName = _readIndex.GetStreamName(streamId);
+			message.Envelope.ReplyWith(new StorageMessage.StreamIdFromTransactionIdResponse(streamName));
 		}
 	}
 }

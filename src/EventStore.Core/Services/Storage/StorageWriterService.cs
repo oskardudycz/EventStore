@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
+using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Histograms;
@@ -22,7 +23,7 @@ using Newtonsoft.Json.Linq;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Storage {
-	public class StorageWriterService : IHandle<SystemMessage.SystemInit>,
+	public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>,
 		IHandle<SystemMessage.StateChangeMessage>,
 		IHandle<SystemMessage.WriteEpoch>,
 		IHandle<SystemMessage.WaitForChaserToCatchUp>,
@@ -33,14 +34,18 @@ namespace EventStore.Core.Services.Storage {
 		IHandle<StorageMessage.WriteTransactionEnd>,
 		IHandle<StorageMessage.WriteCommit>,
 		IHandle<MonitoringMessage.InternalStatsRequest> {
-		private static readonly ILogger Log = Serilog.Log.ForContext<StorageWriterService>();
+		private static readonly ILogger Log = Serilog.Log.ForContext<StorageWriterService<TStreamId>>();
+		private static EqualityComparer<TStreamId> StreamIdComparer { get; } = EqualityComparer<TStreamId>.Default;
 
 		protected static readonly int TicksPerMs = (int)(Stopwatch.Frequency / 1000);
 		private static readonly TimeSpan WaitForChaserSingleIterationTimeout = TimeSpan.FromMilliseconds(200);
 
 		protected readonly TFChunkDb Db;
 		protected readonly TFChunkWriter Writer;
-		private readonly IIndexWriter _indexWriter;
+		private readonly IIndexWriter<TStreamId> _indexWriter;
+		private readonly IRecordFactory<TStreamId> _recordFactory;
+		private readonly IStreamNameToIdReadWrite<TStreamId> _streamIds;
+		private readonly ISystemStreamLookup<TStreamId> _systemStreams;
 		protected readonly IEpochManager EpochManager;
 
 		protected readonly IPublisher Bus;
@@ -79,7 +84,10 @@ namespace EventStore.Core.Services.Storage {
 			TimeSpan minFlushDelay,
 			TFChunkDb db,
 			TFChunkWriter writer,
-			IIndexWriter indexWriter,
+			IIndexWriter<TStreamId> indexWriter,
+			IRecordFactory<TStreamId> recordFactory,
+			IStreamNameToIdReadWrite<TStreamId> streamIds,
+			ISystemStreamLookup<TStreamId> systemStreams,
 			IEpochManager epochManager,
 			QueueStatsManager queueStatsManager) {
 			Ensure.NotNull(bus, "bus");
@@ -87,12 +95,18 @@ namespace EventStore.Core.Services.Storage {
 			Ensure.NotNull(db, "db");
 			Ensure.NotNull(writer, "writer");
 			Ensure.NotNull(indexWriter, "indexWriter");
+			Ensure.NotNull(recordFactory, nameof(recordFactory));
+			Ensure.NotNull(streamIds, nameof(streamIds));
+			Ensure.NotNull(systemStreams, nameof(systemStreams));
 			Ensure.NotNull(epochManager, "epochManager");
 
 			Bus = bus;
 			_subscribeToBus = subscribeToBus;
 			Db = db;
 			_indexWriter = indexWriter;
+			_recordFactory = recordFactory;
+			_streamIds = streamIds;
+			_systemStreams = systemStreams;
 			EpochManager = epochManager;
 
 			_minFlushDelay = minFlushDelay.TotalMilliseconds * TicksPerMs;
@@ -232,7 +246,7 @@ namespace EventStore.Core.Services.Storage {
 				if (msg.CancellationToken.IsCancellationRequested)
 					return;
 
-				string streamId = msg.EventStreamId;
+				_streamIds.GetOrAddId(msg.EventStreamId, out var streamId);
 				var commitCheck = _indexWriter.CheckCommit(streamId, msg.ExpectedVersion,
 					msg.Events.Select(x => x.EventId));
 				if (commitCheck.Decision != CommitDecision.Ok) {
@@ -240,7 +254,7 @@ namespace EventStore.Core.Services.Storage {
 					return;
 				}
 
-				var prepares = new List<PrepareLogRecord>();
+				var prepares = new List<IPrepareLogRecord<TStreamId>>();
 				var logPosition = Writer.Checkpoint.ReadNonFlushed();
 				if (msg.Events.Length > 0) {
 					var transactionPosition = logPosition;
@@ -257,7 +271,7 @@ namespace EventStore.Core.Services.Storage {
 						// when IsCommitted ExpectedVersion is always explicit
 						var expectedVersion = commitCheck.CurrentVersion + i;
 						var res = WritePrepareWithRetry(
-							LogRecord.Prepare(logPosition, msg.CorrelationId, evnt.EventId,
+							LogRecord.Prepare(_recordFactory, logPosition, msg.CorrelationId, evnt.EventId,
 								transactionPosition, i, streamId,
 								expectedVersion, flags, evnt.EventType, evnt.Data, evnt.Metadata));
 						logPosition = res.NewPos;
@@ -268,14 +282,14 @@ namespace EventStore.Core.Services.Storage {
 					}
 				} else {
 					WritePrepareWithRetry(
-						LogRecord.Prepare(logPosition, msg.CorrelationId, Guid.NewGuid(), logPosition, -1,
+						LogRecord.Prepare(_recordFactory, logPosition, msg.CorrelationId, Guid.NewGuid(), logPosition, -1,
 							streamId, commitCheck.CurrentVersion,
 							PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd | PrepareFlags.IsCommitted,
 							null, Empty.ByteArray, Empty.ByteArray));
 				}
 
-				bool softUndeleteMetastream = SystemStreams.IsMetastream(streamId)
-											  && _indexWriter.IsSoftDeleted(SystemStreams.OriginalStreamOf(streamId));
+				bool softUndeleteMetastream = _systemStreams.IsMetaStream(streamId)
+											  && _indexWriter.IsSoftDeleted(_systemStreams.OriginalStreamOf(streamId));
 
 				_indexWriter.PreCommit(prepares);
 
@@ -292,27 +306,27 @@ namespace EventStore.Core.Services.Storage {
 		}
 
 
-		private void SoftUndeleteMetastream(string metastreamId) {
-			var origStreamId = SystemStreams.OriginalStreamOf(metastreamId);
+		private void SoftUndeleteMetastream(TStreamId metastreamId) {
+			var origStreamId = _systemStreams.OriginalStreamOf(metastreamId);
 			var rawMetaInfo = _indexWriter.GetStreamRawMeta(origStreamId);
 			SoftUndeleteStream(origStreamId, rawMetaInfo.MetaLastEventNumber, rawMetaInfo.RawMeta,
 				recreateFrom: _indexWriter.GetStreamLastEventNumber(origStreamId) + 1);
 		}
 
-		private void SoftUndeleteStream(string streamId, long recreateFromEventNumber) {
+		private void SoftUndeleteStream(TStreamId streamId, long recreateFromEventNumber) {
 			var rawInfo = _indexWriter.GetStreamRawMeta(streamId);
 			SoftUndeleteStream(streamId, rawInfo.MetaLastEventNumber, rawInfo.RawMeta, recreateFromEventNumber);
 		}
 
-		private void SoftUndeleteStream(string streamId, long metaLastEventNumber, ReadOnlyMemory<byte> rawMeta, long recreateFrom) {
+		private void SoftUndeleteStream(TStreamId streamId, long metaLastEventNumber, ReadOnlyMemory<byte> rawMeta, long recreateFrom) {
 			byte[] modifiedMeta;
 			if (!SoftUndeleteRawMeta(rawMeta, recreateFrom, out modifiedMeta))
 				return;
 
 			var logPosition = Writer.Checkpoint.ReadNonFlushed();
 			var res = WritePrepareWithRetry(
-				LogRecord.Prepare(logPosition, Guid.NewGuid(), Guid.NewGuid(), logPosition, 0,
-					SystemStreams.MetastreamOf(streamId), metaLastEventNumber,
+				LogRecord.Prepare(_recordFactory, logPosition, Guid.NewGuid(), Guid.NewGuid(), logPosition, 0,
+					_systemStreams.MetaStreamOf(streamId), metaLastEventNumber,
 					PrepareFlags.SingleWrite | PrepareFlags.IsCommitted | PrepareFlags.IsJson,
 					SystemEventTypes.StreamMetadata, modifiedMeta, Empty.ByteArray));
 
@@ -345,7 +359,8 @@ namespace EventStore.Core.Services.Storage {
 
 				var eventId = Guid.NewGuid();
 
-				var commitCheck = _indexWriter.CheckCommit(message.EventStreamId, message.ExpectedVersion,
+				var streamId = _indexWriter.GetStreamId(message.EventStreamId);
+				var commitCheck = _indexWriter.CheckCommit(streamId, message.ExpectedVersion,
 					new[] { eventId });
 				if (commitCheck.Decision != CommitDecision.Ok) {
 					ActOnCommitCheckFailure(message.Envelope, message.CorrelationId, commitCheck);
@@ -355,20 +370,20 @@ namespace EventStore.Core.Services.Storage {
 				if (message.HardDelete) {
 					// HARD DELETE
 					const long expectedVersion = EventNumber.DeletedStream - 1;
-					var record = LogRecord.DeleteTombstone(Writer.Checkpoint.ReadNonFlushed(), message.CorrelationId,
-						eventId, message.EventStreamId, expectedVersion, PrepareFlags.IsCommitted);
+					var record = LogRecord.DeleteTombstone(_recordFactory, Writer.Checkpoint.ReadNonFlushed(), message.CorrelationId,
+						eventId, streamId, expectedVersion, PrepareFlags.IsCommitted);
 					var res = WritePrepareWithRetry(record);
 					_indexWriter.PreCommit(new[] { res.Prepare });
 				} else {
 					// SOFT DELETE
-					var metastreamId = SystemStreams.MetastreamOf(message.EventStreamId);
+					var metastreamId = _systemStreams.MetaStreamOf(streamId);
 					var expectedVersion = _indexWriter.GetStreamLastEventNumber(metastreamId);
 					var logPosition = Writer.Checkpoint.ReadNonFlushed();
 					const PrepareFlags flags = PrepareFlags.SingleWrite | PrepareFlags.IsCommitted |
 											   PrepareFlags.IsJson;
 					var data = new StreamMetadata(truncateBefore: EventNumber.DeletedStream).ToJsonBytes();
 					var res = WritePrepareWithRetry(
-						LogRecord.Prepare(logPosition, message.CorrelationId, eventId, logPosition, 0,
+						LogRecord.Prepare(_recordFactory, logPosition, message.CorrelationId, eventId, logPosition, 0,
 							metastreamId, expectedVersion, flags, SystemEventTypes.StreamMetadata,
 							data, null));
 					_indexWriter.PreCommit(new[] { res.Prepare });
@@ -387,15 +402,16 @@ namespace EventStore.Core.Services.Storage {
 				if (message.LiveUntil < DateTime.UtcNow)
 					return;
 
-				var record = LogRecord.TransactionBegin(Writer.Checkpoint.ReadNonFlushed(),
+				var streamId = _indexWriter.GetStreamId(message.EventStreamId);
+				var record = LogRecord.TransactionBegin(_recordFactory, Writer.Checkpoint.ReadNonFlushed(),
 					message.CorrelationId,
-					message.EventStreamId,
+					streamId,
 					message.ExpectedVersion);
 				var res = WritePrepareWithRetry(record);
 
 				// we update cache to avoid non-cached look-up on next TransactionWrite
 				_indexWriter.UpdateTransactionInfo(res.WrittenPos, res.WrittenPos,
-					new TransactionInfo(-1, message.EventStreamId));
+					new TransactionInfo<TStreamId>(-1, streamId));
 			} catch (Exception exc) {
 				Log.Error(exc, "Exception in writer.");
 				throw;
@@ -416,7 +432,9 @@ namespace EventStore.Core.Services.Storage {
 					long lastLogPosition = -1;
 					for (int i = 0; i < message.Events.Length; ++i) {
 						var evnt = message.Events[i];
-						var record = LogRecord.TransactionWrite(logPosition,
+						var record = LogRecord.TransactionWrite(
+							_recordFactory,
+							logPosition,
 							message.CorrelationId,
 							evnt.EventId,
 							message.TransactionId,
@@ -431,7 +449,7 @@ namespace EventStore.Core.Services.Storage {
 						lastLogPosition = res.WrittenPos;
 					}
 
-					var info = new TransactionInfo(transactionInfo.TransactionOffset + message.Events.Length,
+					var info = new TransactionInfo<TStreamId>(transactionInfo.TransactionOffset + message.Events.Length,
 						transactionInfo.EventStreamId);
 					_indexWriter.UpdateTransactionInfo(message.TransactionId, lastLogPosition, info);
 				}
@@ -453,7 +471,7 @@ namespace EventStore.Core.Services.Storage {
 				if (!CheckTransactionInfo(message.TransactionId, transactionInfo))
 					return;
 
-				var record = LogRecord.TransactionEnd(Writer.Checkpoint.ReadNonFlushed(),
+				var record = LogRecord.TransactionEnd(_recordFactory, Writer.Checkpoint.ReadNonFlushed(),
 					message.CorrelationId,
 					Guid.NewGuid(),
 					message.TransactionId,
@@ -467,14 +485,15 @@ namespace EventStore.Core.Services.Storage {
 			}
 		}
 
-		private static bool CheckTransactionInfo(long transactionId, TransactionInfo transactionInfo) {
-			if (transactionInfo.TransactionOffset < -1 || transactionInfo.EventStreamId.IsEmptyString()) {
+		private static bool CheckTransactionInfo(long transactionId, TransactionInfo<TStreamId> transactionInfo) {
+			var noStreamId = StreamIdComparer.Equals(transactionInfo.EventStreamId, default);
+			if (transactionInfo.TransactionOffset < -1 || noStreamId) {
 				Log.Error(
 					"Invalid transaction info found for transaction ID {transactionId}. "
 					+ "Possibly wrong transactionId provided. TransactionOffset: {transactionOffset}, EventStreamId: {stream}",
 					transactionId,
 					transactionInfo.TransactionOffset,
-					transactionInfo.EventStreamId.IsEmptyString() ? "<null>" : transactionInfo.EventStreamId);
+					noStreamId ? "<null>" : $"{transactionInfo.EventStreamId}");
 				return false;
 			}
 
@@ -497,10 +516,10 @@ namespace EventStore.Core.Services.Storage {
 					message.TransactionPosition,
 					commitCheck.CurrentVersion + 1));
 
-				bool softUndeleteMetastream = SystemStreams.IsMetastream(commitCheck.EventStreamId)
+				bool softUndeleteMetastream = _systemStreams.IsMetaStream(commitCheck.EventStreamId)
 											  &&
 											  _indexWriter.IsSoftDeleted(
-												  SystemStreams.OriginalStreamOf(commitCheck.EventStreamId));
+												  _systemStreams.OriginalStreamOf(commitCheck.EventStreamId));
 
 				_indexWriter.PreCommit(commit);
 
@@ -516,7 +535,7 @@ namespace EventStore.Core.Services.Storage {
 			}
 		}
 
-		private static void ActOnCommitCheckFailure(IEnvelope envelope, Guid correlationId, CommitCheckResult result) {
+		private void ActOnCommitCheckFailure(IEnvelope envelope, Guid correlationId, CommitCheckResult<TStreamId> result) {
 			switch (result.Decision) {
 				case CommitDecision.WrongExpectedVersion:
 					envelope.ReplyWith(new StorageMessage.WrongExpectedVersion(correlationId, result.CurrentVersion));
@@ -525,8 +544,9 @@ namespace EventStore.Core.Services.Storage {
 					envelope.ReplyWith(new StorageMessage.StreamDeleted(correlationId));
 					break;
 				case CommitDecision.Idempotent:
+					var eventStreamName = _indexWriter.GetStreamName(result.EventStreamId);
 					envelope.ReplyWith(new StorageMessage.AlreadyCommitted(correlationId,
-						result.EventStreamId,
+						eventStreamName,
 						result.StartEventNumber,
 						result.EndEventNumber,
 						result.IdempotentLogPosition));
@@ -549,26 +569,20 @@ namespace EventStore.Core.Services.Storage {
 			}
 		}
 
-		private WriteResult WritePrepareWithRetry(PrepareLogRecord prepare) {
+		private WriteResult WritePrepareWithRetry(IPrepareLogRecord<TStreamId> prepare) {
 			long writtenPos = prepare.LogPosition;
 			long newPos;
-			PrepareLogRecord record = prepare;
+			var record = prepare;
 			if (!Writer.Write(prepare, out newPos)) {
 				var transactionPos = prepare.TransactionPosition == prepare.LogPosition
 					? newPos
 					: prepare.TransactionPosition;
-				record = new PrepareLogRecord(newPos,
-					prepare.CorrelationId,
-					prepare.EventId,
-					transactionPos,
-					prepare.TransactionOffset,
-					prepare.EventStreamId,
-					prepare.ExpectedVersion,
-					prepare.TimeStamp,
-					prepare.Flags,
-					prepare.EventType,
-					prepare.Data,
-					prepare.Metadata);
+
+				record = _recordFactory.CopyForRetry(
+					prepare,
+					logPosition: newPos,
+					transactionPosition: transactionPos);
+
 				writtenPos = newPos;
 				if (!Writer.Write(record, out newPos)) {
 					throw new Exception(
@@ -651,9 +665,9 @@ namespace EventStore.Core.Services.Storage {
 		private struct WriteResult {
 			public readonly long WrittenPos;
 			public readonly long NewPos;
-			public readonly PrepareLogRecord Prepare;
+			public readonly IPrepareLogRecord<TStreamId> Prepare;
 
-			public WriteResult(long writtenPos, long newPos, PrepareLogRecord prepare) {
+			public WriteResult(long writtenPos, long newPos, IPrepareLogRecord<TStreamId> prepare) {
 				WrittenPos = writtenPos;
 				NewPos = newPos;
 				Prepare = prepare;

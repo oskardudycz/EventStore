@@ -15,14 +15,19 @@ using EventStore.Core.Settings;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using ILogger = Serilog.ILogger;
+using EventStore.Core.TransactionLog.LogRecords;
 
 namespace EventStore.Core.Index {
-	public class TableIndex : ITableIndex {
+	public abstract class TableIndex {
+		internal static readonly IndexEntry InvalidIndexEntry = new IndexEntry(0, -1, -1);
 		public const string IndexMapFilename = "indexmap";
+		public const string ForceIndexVerifyFilename = ".forceverify";
+	}
+
+	public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 		private const int MaxMemoryTables = 1;
 
-		private static readonly ILogger Log = Serilog.Log.ForContext<TableIndex>();
-		internal static readonly IndexEntry InvalidIndexEntry = new IndexEntry(0, -1, -1);
+		private static readonly ILogger Log = Serilog.Log.ForContext<TableIndex<TStreamId>>();
 
 		public long CommitCheckpoint {
 			get { return Interlocked.Read(ref _commitCheckpoint); }
@@ -57,17 +62,16 @@ namespace EventStore.Core.Index {
 		private volatile bool _backgroundRunning;
 		private readonly ManualResetEventSlim _backgroundRunningEvent = new ManualResetEventSlim(true);
 
-		private IHasher _lowHasher;
-		private IHasher _highHasher;
+		private IHasher<TStreamId> _lowHasher;
+		private IHasher<TStreamId> _highHasher;
 
 		private bool _initialized;
-		public const string ForceIndexVerifyFilename = ".forceverify";
 		private readonly int _maxAutoMergeIndexLevel;
 		private readonly int _pTableMaxReaderCount;
 
 		public TableIndex(string directory,
-			IHasher lowHasher,
-			IHasher highHasher,
+			IHasher<TStreamId> lowHasher,
+			IHasher<TStreamId> highHasher,
 			Func<IMemTable> memTableFactory,
 			Func<TFReaderLease> tfReaderFactory,
 			byte ptableVersion,
@@ -203,7 +207,7 @@ namespace EventStore.Core.Index {
 				Directory.CreateDirectory(directory);
 		}
 
-		public void Add(long commitPos, string streamId, long version, long position) {
+		public void Add(long commitPos, TStreamId streamId, long version, long position) {
 			Ensure.Nonnegative(commitPos, "commitPos");
 			Ensure.Nonnegative(version, "version");
 			Ensure.Nonnegative(position, "position");
@@ -211,7 +215,7 @@ namespace EventStore.Core.Index {
 			AddEntries(commitPos, new[] {CreateIndexKey(streamId, version, position)});
 		}
 
-		public void AddEntries(long commitPos, IList<IndexKey> entries) {
+		public void AddEntries(long commitPos, IList<IndexKey<TStreamId>> entries) {
 			//should only be called on a single thread.
 			var table = (IMemTable)_awaitingMemTables[0].Table; // always a memtable
 
@@ -461,14 +465,14 @@ namespace EventStore.Core.Index {
 			}
 		}
 
-		private static Tuple<string, bool> ReadEntry(TFReaderLease reader, long position) {
+		private Tuple<TStreamId, bool> ReadEntry(TFReaderLease reader, long position) {
 			RecordReadResult result = reader.TryReadAt(position);
 			if (!result.Success)
-				return new Tuple<string, bool>(String.Empty, false);
-			if (result.LogRecord.RecordType != TransactionLog.LogRecords.LogRecordType.Prepare)
+				return new Tuple<TStreamId, bool>(default, false); //qq NOTE WE HAVE CHANGED "" to NULL HERE, LOOKG INTO WHETRHER THAT IS BAD
+			if (result.LogRecord.RecordType != LogRecordType.Prepare)
 				throw new Exception(string.Format("Incorrect type of log record {0}, expected Prepare record.",
 					result.LogRecord.RecordType));
-			return new Tuple<string, bool>(((TransactionLog.LogRecords.PrepareLogRecord)result.LogRecord).EventStreamId,
+			return new Tuple<TStreamId, bool>(((IPrepareLogRecord<TStreamId>)result.LogRecord).EventStreamId,
 				true);
 		}
 
@@ -506,7 +510,7 @@ namespace EventStore.Core.Index {
 			}
 		}
 
-		public bool TryGetOneValue(string streamId, long version, out long position) {
+		public bool TryGetOneValue(TStreamId streamId, long version, out long position) {
 			ulong stream = CreateHash(streamId);
 			int counter = 0;
 			while (counter < 5) {
@@ -544,7 +548,7 @@ namespace EventStore.Core.Index {
 			return false;
 		}
 
-		public bool TryGetLatestEntry(string streamId, out IndexEntry entry) {
+		public bool TryGetLatestEntry(TStreamId streamId, out IndexEntry entry) {
 			ulong stream = CreateHash(streamId);
 			var counter = 0;
 			while (counter < 5) {
@@ -579,7 +583,7 @@ namespace EventStore.Core.Index {
 			return false;
 		}
 
-		public bool TryGetOldestEntry(string streamId, out IndexEntry entry) {
+		public bool TryGetOldestEntry(TStreamId streamId, out IndexEntry entry) {
 			ulong stream = CreateHash(streamId);
 			var counter = 0;
 			while (counter < 5) {
@@ -614,7 +618,7 @@ namespace EventStore.Core.Index {
 			return false;
 		}
 
-		public IEnumerable<IndexEntry> GetRange(string streamId, long startVersion, long endVersion,
+		public IEnumerable<IndexEntry> GetRange(TStreamId streamId, long startVersion, long endVersion,
 			int? limit = null) {
 			ulong hash = CreateHash(streamId);
 			var counter = 0;
@@ -713,21 +717,21 @@ namespace EventStore.Core.Index {
 			_indexMap.InOrder().ToList().ForEach(x => x.WaitForDisposal(TimeSpan.FromMilliseconds(5000)));
 		}
 
-		private IndexEntry CreateIndexEntry(IndexKey key) {
+		private IndexEntry CreateIndexEntry(IndexKey<TStreamId> key) {
 			key = CreateIndexKey(key.StreamId, key.Version, key.Position);
 			return new IndexEntry(key.Hash, key.Version, key.Position);
 		}
 
-		private ulong UpgradeHash(string streamId, ulong lowHash) {
+		private ulong UpgradeHash(TStreamId streamId, ulong lowHash) {
 			return lowHash << 32 | _highHasher.Hash(streamId);
 		}
 
-		private ulong CreateHash(string streamId) {
+		private ulong CreateHash(TStreamId streamId) {
 			return (ulong)_lowHasher.Hash(streamId) << 32 | _highHasher.Hash(streamId);
 		}
 
-		private IndexKey CreateIndexKey(string streamId, long version, long position) {
-			return new IndexKey(streamId, version, position, CreateHash(streamId));
+		private IndexKey<TStreamId> CreateIndexKey(TStreamId streamId, long version, long position) {
+			return new IndexKey<TStreamId>(streamId, version, position, CreateHash(streamId));
 		}
 
 		private class TableItem {

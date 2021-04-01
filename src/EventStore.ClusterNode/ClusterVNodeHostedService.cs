@@ -29,7 +29,7 @@ namespace EventStore.ClusterNode {
 		private ExclusiveDbLock _dbLock;
 		private ClusterNodeMutex _clusterNodeMutex;
 
-		public ClusterVNode Node { get; private set; }
+		public IClusterVNode Node { get; private set; }
 
 		public ClusterVNodeHostedService(string[] args) : base(args) {
 		}
@@ -163,7 +163,7 @@ namespace EventStore.ClusterNode {
 			return clusterSize / 2 + 1;
 		}
 
-		private static ClusterVNode BuildNode(ClusterNodeOptions options, Func<ClusterNodeOptions> loadConfigFunc) {
+		private static IClusterVNode BuildNode(ClusterNodeOptions options, Func<ClusterNodeOptions> loadConfigFunc) {
 			var quorumSize = GetQuorumSize(options.ClusterSize);
 
 			var disableInternalTcpTls = options.Insecure;

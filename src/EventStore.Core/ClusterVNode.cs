@@ -12,7 +12,6 @@ using EventStore.Core.Cluster.Settings;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
 using EventStore.Core.Index;
-using EventStore.Core.Index.Hashes;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services;
@@ -44,6 +43,7 @@ using EventStore.Common.Options;
 using EventStore.Core.Authentication.DelegatedAuthentication;
 using EventStore.Core.Authorization;
 using EventStore.Core.Cluster;
+using EventStore.Core.LogAbstraction;
 using EventStore.Native.UnixSignalManager;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
@@ -57,13 +57,14 @@ using MidFunc = System.Func<
 >;
 
 namespace EventStore.Core {
-	public class ClusterVNode :
+	public class ClusterVNode<TStreamId> :
+		IClusterVNode,
 		IHandle<SystemMessage.StateChangeMessage>,
 		IHandle<SystemMessage.BecomeShuttingDown>,
 		IHandle<SystemMessage.BecomeShutdown>,
 		IHandle<SystemMessage.SystemStart>,
 		IHandle<ClientMessage.ReloadConfig>{
-		private static readonly ILogger Log = Serilog.Log.ForContext<ClusterVNode>();
+		private static readonly ILogger Log = Serilog.Log.ForContext<ClusterVNode<TStreamId>>();
 
 		public IQueuedHandler MainQueue {
 			get { return _mainQueue; }
@@ -107,7 +108,7 @@ namespace EventStore.Core {
 		private readonly IQueuedHandler _mainQueue;
 		private readonly ISubscriber _mainBus;
 
-		private readonly ClusterVNodeController _controller;
+		private readonly ClusterVNodeController<TStreamId> _controller;
 		private readonly TimerService _timerService;
 		private readonly KestrelHttpService _httpService;
 		private readonly ITimeProvider _timeProvider;
@@ -115,7 +116,7 @@ namespace EventStore.Core {
 		private readonly TaskCompletionSource<bool> _shutdownSource = new TaskCompletionSource<bool>();
 		private readonly IAuthenticationProvider _authenticationProvider;
 		private readonly IAuthorizationProvider _authorizationProvider;
-		private readonly IReadIndex _readIndex;
+		private readonly IReadIndex<TStreamId> _readIndex;
 
 		private readonly InMemoryBus[] _workerBuses;
 		private readonly MultiQueuedHandler _workersHandler;
@@ -133,7 +134,7 @@ namespace EventStore.Core {
 		private readonly Func<X509Certificate, X509Chain, SslPolicyErrors, ValueTuple<bool, string>> _externalServerCertificateValidator;
 
 		private readonly ClusterVNodeSettings _vNodeSettings;
-		private readonly ClusterVNodeStartup _startup;
+		private readonly ClusterVNodeStartup<TStreamId> _startup;
 		private readonly EventStoreClusterClientCache _eventStoreClusterClientCache;
 
 		private int _stopCalled;
@@ -160,6 +161,7 @@ namespace EventStore.Core {
 
 		public ClusterVNode(TFChunkDb db,
 			ClusterVNodeSettings vNodeSettings,
+			LogFormatAbstractor<TStreamId> logFormat,
 			IGossipSeedSource gossipSeedSource,
 			InfoControllerBuilder infoControllerBuilder,
 			params ISubsystem[] subsystems) {
@@ -211,7 +213,7 @@ namespace EventStore.Core {
 
 			_subsystems = subsystems;
 
-			_controller = new ClusterVNodeController((IPublisher)_mainBus, _nodeInfo, db, vNodeSettings, this,
+			_controller = new ClusterVNodeController<TStreamId>((IPublisher)_mainBus, _nodeInfo, db, vNodeSettings, this,
 				forwardingProxy, _subsystems);
 			_mainQueue = QueuedHandler.CreateQueuedHandler(_controller, "MainQueue", _queueStatsManager);
 
@@ -288,9 +290,9 @@ namespace EventStore.Core {
 					db.Config.WriterCheckpoint.AsReadOnly(),
 					optimizeReadSideCache: db.Config.OptimizeReadSideCache));
 
-			var tableIndex = new TableIndex(indexPath,
-				new XXHashUnsafe(),
-				new Murmur3AUnsafe(),
+			var tableIndex = new TableIndex<TStreamId>(indexPath,
+				logFormat.LowHasher,
+				logFormat.HighHasher,
 				() => new HashListMemTable(vNodeSettings.IndexBitnessVersion,
 					maxSize: vNodeSettings.MaxMemtableEntryCount * 2),
 				() => new TFReaderLease(readerPool),
@@ -304,9 +306,14 @@ namespace EventStore.Core {
 				additionalReclaim: false,
 				maxAutoMergeIndexLevel: vNodeSettings.MaxAutoMergeIndexLevel,
 				pTableMaxReaderCount: vNodeSettings.PTableMaxReaderCount);
-			var readIndex = new ReadIndex(_mainQueue,
+			var readIndex = new ReadIndex<TStreamId>(_mainQueue,
 				readerPool,
 				tableIndex,
+				logFormat.StreamIdsReadOnly,
+				logFormat.StreamNamesFactory,
+				logFormat.SystemStreams,
+				logFormat.StreamIdValidator,
+				logFormat.StreamIdSizer,
 				vNodeSettings.StreamInfoCacheCapacity,
 				ESConsts.PerformAdditionlCommitChecks,
 				ESConsts.MetaStreamMaxCount,
@@ -326,17 +333,24 @@ namespace EventStore.Core {
 					db,
 					db.Config.WriterCheckpoint.AsReadOnly(),
 					optimizeReadSideCache: db.Config.OptimizeReadSideCache),
+				logFormat.RecordFactory,
 				_nodeInfo.InstanceId);
 			epochManager.Init();
 
-			var storageWriter = new ClusterStorageWriterService(_mainQueue, _mainBus, vNodeSettings.MinFlushDelay,
-				db, writer, readIndex.IndexWriter, epochManager, _queueStatsManager,
+			var storageWriter = new ClusterStorageWriterService<TStreamId>(_mainQueue, _mainBus, vNodeSettings.MinFlushDelay,
+				db, writer, readIndex.IndexWriter,
+				logFormat.RecordFactory,
+				logFormat.StreamIdsReadWrite,
+				logFormat.SystemStreams,
+				epochManager,
+				_queueStatsManager,
 				() => readIndex.LastIndexedPosition); // subscribes internally
 			AddTasks(storageWriter.Tasks);
 
 			monitoringRequestBus.Subscribe<MonitoringMessage.InternalStatsRequest>(storageWriter);
 
-			var storageReader = new StorageReaderService(_mainQueue, _mainBus, readIndex,
+			var storageReader = new StorageReaderService<TStreamId>(_mainQueue, _mainBus, readIndex,
+				logFormat.SystemStreams,
 				vNodeSettings.ReaderThreadsCount, db.Config.WriterCheckpoint.AsReadOnly(), _queueStatsManager);
 
 			_mainBus.Subscribe<SystemMessage.SystemInit>(storageReader);
@@ -360,7 +374,7 @@ namespace EventStore.Core {
 			_mainBus.Subscribe<ReplicationTrackingMessage.LeaderReplicatedTo>(replicationTracker);
 			_mainBus.Subscribe<SystemMessage.VNodeConnectionLost>(replicationTracker);
 
-			var indexCommitterService = new IndexCommitterService(readIndex.IndexCommitter, _mainQueue,
+			var indexCommitterService = new IndexCommitterService<TStreamId>(readIndex.IndexCommitter, _mainQueue,
 				db.Config.WriterCheckpoint.AsReadOnly(),
 				db.Config.ReplicationCheckpoint.AsReadOnly(),
 				vNodeSettings.CommitAckCount, tableIndex, _queueStatsManager);
@@ -378,7 +392,7 @@ namespace EventStore.Core {
 				db.Config.ChaserCheckpoint,
 				db.Config.OptimizeReadSideCache);
 
-			var storageChaser = new StorageChaser(
+			var storageChaser = new StorageChaser<TStreamId>(
 				_mainQueue,
 				db.Config.WriterCheckpoint.AsReadOnly(),
 				chaser,
@@ -624,7 +638,7 @@ namespace EventStore.Core {
 			_mainBus.Subscribe(subscrQueue.WidenFrom<SubscriptionMessage.CheckPollTimeout, Message>());
 			_mainBus.Subscribe(subscrQueue.WidenFrom<StorageMessage.EventCommitted, Message>());
 
-			var subscription = new SubscriptionsService(_mainQueue, subscrQueue, readIndex);
+			var subscription = new SubscriptionsService<TStreamId>(_mainQueue, subscrQueue, readIndex);
 			subscrBus.Subscribe<SystemMessage.SystemStart>(subscription);
 			subscrBus.Subscribe<SystemMessage.BecomeShuttingDown>(subscription);
 			subscrBus.Subscribe<TcpMessage.ConnectionClosed>(subscription);
@@ -671,7 +685,7 @@ namespace EventStore.Core {
 			var consumerStrategyRegistry =
 				new PersistentSubscriptionConsumerStrategyRegistry(_mainQueue, _mainBus,
 					vNodeSettings.AdditionalConsumerStrategies);
-			var persistentSubscription = new PersistentSubscriptionService(perSubscrQueue, readIndex, ioDispatcher,
+			var persistentSubscription = new PersistentSubscriptionService<TStreamId>(perSubscrQueue, readIndex, ioDispatcher,
 				_mainQueue, consumerStrategyRegistry);
 			perSubscrBus.Subscribe<SystemMessage.BecomeShuttingDown>(persistentSubscription);
 			perSubscrBus.Subscribe<SystemMessage.BecomeLeader>(persistentSubscription);
@@ -697,9 +711,10 @@ namespace EventStore.Core {
 			// STORAGE SCAVENGER
 			var scavengerLogManager = new TFChunkScavengerLogManager(_nodeInfo.HttpEndPoint.ToString(),
 				TimeSpan.FromDays(vNodeSettings.ScavengeHistoryMaxAge), ioDispatcher);
-			var storageScavenger = new StorageScavenger(db,
+			var storageScavenger = new StorageScavenger<TStreamId>(db,
 				tableIndex,
 				readIndex,
+				logFormat.SystemStreams,
 				scavengerLogManager,
 				vNodeSettings.AlwaysKeepScavenged,
 				!vNodeSettings.DisableScavengeMerging,
@@ -830,7 +845,7 @@ namespace EventStore.Core {
 				}
 			}
 
-			_startup = new ClusterVNodeStartup(_subsystems, _mainQueue, _mainBus, _workersHandler, _authenticationProvider, httpAuthenticationProviders, _authorizationProvider, _readIndex,
+			_startup = new ClusterVNodeStartup<TStreamId>(_subsystems, _mainQueue, _mainBus, _workersHandler, _authenticationProvider, httpAuthenticationProviders, _authorizationProvider, _readIndex,
 				_vNodeSettings.MaxAppendSize, _httpService);
 			_mainBus.Subscribe<SystemMessage.SystemReady>(_startup);
 			_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(_startup);
@@ -927,8 +942,8 @@ namespace EventStore.Core {
 #endif
 		}
 
-		public async Task<ClusterVNode> StartAsync(bool waitUntilReady) {
-			var tcs = new TaskCompletionSource<ClusterVNode>(TaskCreationOptions.RunContinuationsAsynchronously);
+		public async Task<IClusterVNode> StartAsync(bool waitUntilReady) {
+			var tcs = new TaskCompletionSource<IClusterVNode>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 			if (waitUntilReady) {
 				_mainBus.Subscribe(new AdHocHandler<SystemMessage.SystemReady>(

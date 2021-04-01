@@ -21,7 +21,7 @@ namespace EventStore.ClientAPI.Embedded {
 		/// <param name="eventStore">The <see cref="ClusterVNode" /> to connect to. The node must already be running.</param>
 		/// <param name="connectionName">Optional name of connection (will be generated automatically, if not provided)</param>
 		/// <returns></returns>
-		public static IEventStoreConnection Create(ClusterVNode eventStore, string connectionName = null) {
+		public static IEventStoreConnection Create(IClusterVNode eventStore, string connectionName = null) {
 			return Create(eventStore, ConnectionSettings.Default, connectionName);
 		}
 
@@ -32,7 +32,7 @@ namespace EventStore.ClientAPI.Embedded {
 		/// <param name="connectionSettings">The <see cref="ConnectionSettings"/> to apply to the new connection</param>
 		/// <param name="connectionName">Optional name of connection (will be generated automatically, if not provided)</param>
 		/// <returns></returns>
-		public static IEventStoreConnection Create(ClusterVNode eventStore, ConnectionSettings connectionSettings,
+		public static IEventStoreConnection Create(IClusterVNode eventStore, ConnectionSettings connectionSettings,
 			string connectionName = null) {
 			return Create(eventStore.MainQueue, eventStore.MainBus, eventStore.AuthenticationProvider, eventStore.AuthorizationGateway,
 				connectionSettings, connectionName);

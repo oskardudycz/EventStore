@@ -9,7 +9,7 @@ namespace EventStore.Core.Tests.Common.VNodeBuilderTests {
 	[TestFixture]
 	public abstract class SingleNodeScenario {
 		protected VNodeBuilder _builder;
-		protected ClusterVNode _node;
+		protected IClusterVNode _node;
 		protected ClusterVNodeSettings _settings;
 		protected TFChunkDbConfig _dbConfig;
 
@@ -40,7 +40,7 @@ namespace EventStore.Core.Tests.Common.VNodeBuilderTests {
 	[TestFixture, Category("LongRunning")]
 	public abstract class ClusterMemberScenario {
 		protected VNodeBuilder _builder;
-		protected ClusterVNode _node;
+		protected IClusterVNode _node;
 		protected ClusterVNodeSettings _settings;
 		protected TFChunkDbConfig _dbConfig;
 		protected int _clusterSize = 3;

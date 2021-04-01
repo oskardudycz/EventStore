@@ -12,8 +12,11 @@ using EventStore.Core.Authentication;
 using EventStore.Core.Authentication.InternalAuthentication;
 using EventStore.Core.Authorization;
 using EventStore.Core.Cluster.Settings;
+using EventStore.Core.Index.Hashes;
+using EventStore.Core.LogAbstraction;
 using EventStore.Core.Services.Gossip;
 using EventStore.Core.Services.Monitoring;
+using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.FileNamingStrategy;
@@ -1392,19 +1395,10 @@ namespace EventStore.Core {
 		/// <summary>
 		/// Converts an <see cref="VNodeBuilder"/> to a <see cref="ClusterVNode"/>.
 		/// </summary>
-		/// <param name="builder"></param>
-		/// <returns>A <see cref="ClusterVNode"/> built with the options that were set on the <see cref="VNodeBuilder"/></returns>
-		public static implicit operator ClusterVNode(VNodeBuilder builder) {
-			return builder.Build();
-		}
-
-		/// <summary>
-		/// Converts an <see cref="VNodeBuilder"/> to a <see cref="ClusterVNode"/>.
-		/// </summary>
 		/// <param name="options">The options with which to build the infoController</param>
 		/// <param name="consumerStrategies">The consumer strategies with which to build the node</param>
 		/// <returns>A <see cref="ClusterVNode"/> built with the options that were set on the <see cref="VNodeBuilder"/></returns>
-		public ClusterVNode Build(IOptions options = null,
+		public IClusterVNode Build(IOptions options = null,
 			IPersistentSubscriptionConsumerStrategyFactory[] consumerStrategies = null) {
 			SetUpProjectionsIfNeeded();
 			_gossipAdvertiseInfo = EnsureGossipAdvertiseInfo();
@@ -1530,7 +1524,8 @@ namespace EventStore.Core {
 			_log.Information("{description,-25} {truncateCheckpoint} (0x{truncateCheckpoint:X})", "TRUNCATE CHECKPOINT:",
 				truncateCheckpoint, truncateCheckpoint);
 
-			return new ClusterVNode(_db, _vNodeSettings, GetGossipSource(), infoControllerBuilder, _subsystems.ToArray());
+			var logFormat = LogFormatAbstractor.V2;
+			return new ClusterVNode<string>(_db, _vNodeSettings, logFormat, GetGossipSource(), infoControllerBuilder, _subsystems.ToArray());
 		}
 
 		private int ComputePTableMaxReaderCount(int ptableInitialReaderCount, int readerThreadsCount) {

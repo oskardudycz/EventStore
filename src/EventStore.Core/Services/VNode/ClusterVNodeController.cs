@@ -16,19 +16,19 @@ using EventStore.Core.TransactionLog.Chunks;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.VNode {
-	public class ClusterVNodeController : IHandle<Message> {
+	public class ClusterVNodeController<TStreamId> : IHandle<Message> {
 		public static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(5);
 		public static readonly TimeSpan LeaderReconnectionDelay = TimeSpan.FromMilliseconds(500);
 		private static readonly TimeSpan LeaderSubscriptionRetryDelay = TimeSpan.FromMilliseconds(500);
 		private static readonly TimeSpan LeaderSubscriptionTimeout = TimeSpan.FromMilliseconds(1000);
 		private static readonly TimeSpan LeaderDiscoveryTimeout = TimeSpan.FromMilliseconds(3000);
 
-		private static readonly ILogger Log = Serilog.Log.ForContext<ClusterVNodeController>();
+		private static readonly ILogger Log = Serilog.Log.ForContext<ClusterVNodeController<TStreamId>>();
 
 		private readonly IPublisher _outputBus;
 		private readonly VNodeInfo _nodeInfo;
 		private readonly TFChunkDb _db;
-		private readonly ClusterVNode _node;
+		private readonly ClusterVNode<TStreamId> _node;
 
 		private VNodeState _state = VNodeState.Initializing;
 		private MemberInfo _leader;
@@ -61,7 +61,7 @@ namespace EventStore.Core.Services.VNode {
 		private bool _exitProcessOnShutdown;
 
 		public ClusterVNodeController(IPublisher outputBus, VNodeInfo nodeInfo, TFChunkDb db,
-			ClusterVNodeSettings vnodeSettings, ClusterVNode node,
+			ClusterVNodeSettings vnodeSettings, ClusterVNode<TStreamId> node,
 			MessageForwardingProxy forwardingProxy, ISubsystem[] subSystems) {
 			Ensure.NotNull(outputBus, "outputBus");
 			Ensure.NotNull(nodeInfo, "nodeInfo");

@@ -19,7 +19,7 @@ using Xunit;
 namespace EventStore.ClientAPI.Tests {
 	public partial class EventStoreClientAPIClusterFixture : IAsyncLifetime, IAsyncDisposable {
 		private const int ClusterSize = 3;
-		private readonly ClusterVNode[] _nodes = new ClusterVNode[ClusterSize];
+		private readonly IClusterVNode[] _nodes = new IClusterVNode[ClusterSize];
 		private readonly IWebHost[] _hosts = new IWebHost[ClusterSize];
 		public EventStoreClientAPIClusterFixture() {
 			var serverCertificate = GetServerCertificate();
@@ -55,7 +55,7 @@ namespace EventStore.ClientAPI.Tests {
 									ClientCertificateMode = ClientCertificateMode.AllowCertificate,
 									ClientCertificateValidation = (certificate, chain, sslPolicyErrors) => {
 										var (isValid, error) =
-											ClusterVNode.ValidateClientCertificateWithTrustedRootCerts(certificate, chain, sslPolicyErrors, () => rootCertificates);
+											ClusterVNode<string>.ValidateClientCertificateWithTrustedRootCerts(certificate, chain, sslPolicyErrors, () => rootCertificates);
 										if (!isValid && error != null) {
 											Log.Error("Client certificate validation error: {e}", error);
 										}

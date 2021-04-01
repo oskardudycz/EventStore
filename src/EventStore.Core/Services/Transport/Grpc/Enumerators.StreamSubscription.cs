@@ -5,16 +5,18 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
+using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
+using EventStore.Core.Services.Storage.ReaderIndex;
 using Grpc.Core;
 using Serilog;
-using IReadIndex = EventStore.Core.Services.Storage.ReaderIndex.IReadIndex;
+using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 
 namespace EventStore.Core.Services.Transport.Grpc {
 	internal static partial class Enumerators {
-		public class StreamSubscription : ISubscriptionEnumerator {
-			private static readonly ILogger Log = Serilog.Log.ForContext<StreamSubscription>();
+		public class StreamSubscription<TStreamId> : ISubscriptionEnumerator {
+			private static readonly ILogger Log = Serilog.Log.ForContext<StreamSubscription<TStreamId>>();
 
 			private readonly Guid _subscriptionId;
 			private readonly IPublisher _bus;
@@ -41,7 +43,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 				bool resolveLinks,
 				ClaimsPrincipal user,
 				bool requiresLeader,
-				IReadIndex readIndex,
+				IReadIndex<TStreamId> readIndex,
 				CancellationToken cancellationToken) {
 				if (bus == null) {
 					throw new ArgumentNullException(nameof(bus));
@@ -68,8 +70,9 @@ namespace EventStore.Core.Services.Transport.Grpc {
 
 				SubscriptionId = _subscriptionId.ToString();
 
+				var streamId = readIndex.GetStreamId(_streamName);
 				Subscribe(startRevision == StreamRevision.End
-					? StreamRevision.FromInt64(readIndex.GetStreamLastEventNumber(_streamName) + 1)
+					? StreamRevision.FromInt64(readIndex.GetStreamLastEventNumber(streamId) + 1)
 					: startRevision + 1 ?? StreamRevision.Start, startRevision != StreamRevision.End);
 			}
 

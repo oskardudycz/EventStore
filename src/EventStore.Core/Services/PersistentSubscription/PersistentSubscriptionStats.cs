@@ -10,7 +10,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		private TimeSpan _lastTotalTime;
 		private long _lastTotalItems;
 		private IPersistentSubscriptionStreamPosition _lastEventPosition;
-		private long _lastKnownEventNumber = -1;
+		private IPersistentSubscriptionStreamPosition _lastKnownEventPosition;
 		private readonly PersistentSubscription _parent;
 		private readonly Stopwatch _totalTimeWatch;
 		private readonly PersistentSubscriptionParams _settings;
@@ -30,9 +30,11 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			_lastEventPosition = lastEventPosition;
 		}
 
-		public void SetLastKnownEventNumber(long knownEventNumber) {
-			if (knownEventNumber > _lastKnownEventNumber)
-				_lastKnownEventNumber = knownEventNumber;
+		public void SetLastKnownEventPosition(IPersistentSubscriptionStreamPosition knownEventPosition) {
+			if (knownEventPosition == null)
+				return;
+			if (_lastKnownEventPosition == null || _lastKnownEventPosition.CompareTo(knownEventPosition) < 0)
+				_lastKnownEventPosition = knownEventPosition;
 		}
 
 		public MonitoringMessage.SubscriptionInfo GetStatistics() {
@@ -80,7 +82,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				Connections = connections,
 				AveragePerSecond = avgItemsPerSecond,
 				LastProcessedEventPosition = _lastEventPosition?.ToString(),
-				LastKnownMessage = _lastKnownEventNumber,
+				LastKnownMessage = _lastKnownEventPosition?.ToString(),
 				TotalItems = totalItems,
 				CountSinceLastMeasurement = lastItems,
 				CheckPointAfterMilliseconds = (int)_settings.CheckPointAfter.TotalMilliseconds,

@@ -867,7 +867,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 					AverageItemsPerSecond = stat.AveragePerSecond,
 					TotalItemsProcessed = stat.TotalItems,
 					CountSinceLastMeasurement = stat.CountSinceLastMeasurement,
-					LastKnownEventNumber = stat.LastKnownMessage,
+					LastKnownEventNumber = (stat.LastKnownMessage != null)? long.Parse(stat.LastKnownMessage) : 0,
 					LastProcessedEventNumber = (stat.LastProcessedEventPosition != null)? long.Parse(stat.LastProcessedEventPosition) : 0, /*'LastProcessedEventNumber' name kept for backward compatibility*/
 					ReadBufferCount = stat.ReadBufferCount,
 					LiveBufferCount = stat.LiveBufferCount,
@@ -938,7 +938,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 					Status = stat.Status,
 					AverageItemsPerSecond = stat.AveragePerSecond,
 					TotalItemsProcessed = stat.TotalItems,
-					LastKnownEventNumber = stat.LastKnownMessage,
+					LastKnownEventNumber = (stat.LastKnownMessage != null)? long.Parse(stat.LastKnownMessage) : 0,
 					LastProcessedEventNumber = (stat.LastProcessedEventPosition != null)? long.Parse(stat.LastProcessedEventPosition) : 0, /*'LastProcessedEventNumber' name kept for backward compatibility*/
 					ParkedMessageUri = MakeUrl(manager,
 						string.Format(parkedMessageUriTemplate, escapedStreamId, escapedGroupName)),

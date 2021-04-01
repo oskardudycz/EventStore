@@ -47,7 +47,7 @@
 
 			var sub = new PersistentSubscription(
 				PersistentSubscriptionToStreamParamsBuilder.CreateFor("$ce-streamName", "groupName")
-					.WithEventLoader(new FakeStreamReader(x => { }))
+					.WithEventLoader(new FakeStreamReader())
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 					.WithMessageParker(new FakeMessageParker())
@@ -96,7 +96,7 @@
 
 			var sub = new PersistentSubscription(
 				PersistentSubscriptionToStreamParamsBuilder.CreateFor("$ce-streamName", "groupName")
-					.WithEventLoader(new FakeStreamReader(x => { }))
+					.WithEventLoader(new FakeStreamReader())
 					.WithCheckpointReader(reader)
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 					.WithMessageParker(new FakeMessageParker())

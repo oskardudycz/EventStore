@@ -11,7 +11,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			Assert.Throws<ArgumentOutOfRangeException>(() =>
 				new Core.Services.PersistentSubscription.PersistentSubscription(PersistentSubscriptionToStreamParamsBuilder
 					.CreateFor("stream", "group")
-					.WithEventLoader(new FakeStreamReader(x => { }))
+					.WithEventLoader(new FakeStreamReader())
 					.WithCheckpointReader(new FakeCheckpointReader())
 					.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 					.WithMessageParker(new FakeMessageParker())

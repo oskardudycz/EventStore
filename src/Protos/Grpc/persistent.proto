@@ -19,7 +19,12 @@ message ReadReq {
 	}
 
 	message Options {
-		event_store.client.shared.StreamIdentifier stream_identifier = 1;
+		event_store.client.shared.StreamIdentifier stream_identifier = 1 [deprecated = true];
+		oneof stream_option {
+			StreamOptions stream = 5;
+			AllOptions all = 6;
+		}
+
 		string group_name = 2;
 		int32 buffer_size = 3;
 		UUIDOption uuid_option = 4;
@@ -30,6 +35,13 @@ message ReadReq {
 				event_store.client.shared.Empty string = 2;
 			}
 		}
+	}
+
+	message StreamOptions {
+		event_store.client.shared.StreamIdentifier stream_identifier = 1;
+	}
+
+	message AllOptions {
 	}
 
 	message Ack {
@@ -89,14 +101,40 @@ message CreateReq {
 	Options options = 1;
 
 	message Options {
-		event_store.client.shared.StreamIdentifier stream_identifier = 1;
+		oneof stream_option {
+			StreamOptions stream = 4;
+			AllOptions all = 5;
+		}
+		event_store.client.shared.StreamIdentifier stream_identifier = 1 [deprecated=true];
 		string group_name = 2;
 		Settings settings = 3;
 	}
 
+	message StreamOptions {
+		event_store.client.shared.StreamIdentifier stream_identifier = 1;
+		oneof revision_option {
+			uint64 revision = 2;
+			event_store.client.shared.Empty start = 3;
+			event_store.client.shared.Empty end = 4;
+		}
+	}
+
+	message AllOptions {
+		oneof all_option {
+			Position position = 1;
+			event_store.client.shared.Empty start = 2;
+			event_store.client.shared.Empty end = 3;
+		}
+	}
+
+	message Position {
+		uint64 commit_position = 1;
+		uint64 prepare_position = 2;
+	}
+
 	message Settings {
 		bool resolve_links = 1;
-		uint64 revision = 2;
+		uint64 revision = 2 [deprecated = true];
 		bool extra_statistics = 3;
 		int32 max_retry_count = 5;
 		int32 min_checkpoint_count = 7;
@@ -130,14 +168,40 @@ message UpdateReq {
 	Options options = 1;
 
 	message Options {
-		event_store.client.shared.StreamIdentifier stream_identifier = 1;
+		oneof stream_option {
+			StreamOptions stream = 4;
+			AllOptions all = 5;
+		}
+		event_store.client.shared.StreamIdentifier stream_identifier = 1 [deprecated = true];
 		string group_name = 2;
 		Settings settings = 3;
 	}
 
+	message StreamOptions {
+		event_store.client.shared.StreamIdentifier stream_identifier = 1;
+		oneof revision_option {
+			uint64 revision = 2;
+			event_store.client.shared.Empty start = 3;
+			event_store.client.shared.Empty end = 4;
+		}
+	}
+
+	message AllOptions {
+		oneof all_option {
+			Position position = 1;
+			event_store.client.shared.Empty start = 2;
+			event_store.client.shared.Empty end = 3;
+		}
+	}
+
+	message Position {
+		uint64 commit_position = 1;
+		uint64 prepare_position = 2;
+	}
+
 	message Settings {
 		bool resolve_links = 1;
-		uint64 revision = 2;
+		uint64 revision = 2 [deprecated = true];
 		bool extra_statistics = 3;
 		int32 max_retry_count = 5;
 		int32 min_checkpoint_count = 7;
@@ -171,8 +235,19 @@ message DeleteReq {
 	Options options = 1;
 
 	message Options {
-		event_store.client.shared.StreamIdentifier stream_identifier = 1;
+		oneof stream_option {
+			StreamOptions stream = 3;
+			AllOptions all = 4;
+		}
+		event_store.client.shared.StreamIdentifier stream_identifier = 1 [deprecated = true];
 		string group_name = 2;
+	}
+
+	message StreamOptions {
+		event_store.client.shared.StreamIdentifier stream_identifier = 1;
+	}
+
+	message AllOptions {
 	}
 }
 

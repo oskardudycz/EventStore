@@ -1840,12 +1840,19 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			}
 		}
 
-		private static readonly Guid[] eventIds = new[] {
+		private static readonly Guid[] eventIds = {
+			//could be generated with a pseudo random number generator but
+			//there's no need for now
 			Guid.Parse("157e9b5a-09b1-49a8-9409-000000000000"),
 			Guid.Parse("e986669f-1845-4a2b-87df-111111111111"),
 			Guid.Parse("c18d692f-ab16-401f-b020-222222222222"),
 			Guid.Parse("2d31ce08-6a5a-48df-b92b-333333333333"),
-			Guid.Parse("aa343d98-41d4-4d9d-8356-444444444444")
+			Guid.Parse("aa343d98-41d4-4d9d-8356-444444444444"),
+			Guid.Parse("3bd03065-d0e1-460f-bf2d-555555555555"),
+			Guid.Parse("e18d84f3-72ea-4912-84ac-666666666666"),
+			Guid.Parse("8ee1ee33-07f7-42e7-a64d-777777777777"),
+			Guid.Parse("1594759b-b419-48a4-8a84-888888888888"),
+			Guid.Parse("0a07af23-6b6b-47c7-93c4-999999999999")
 		};
 
 		public static Guid GetEventIdFor(int position) {
@@ -1856,8 +1863,8 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			return eventIds[position];
 		}
 
-		public static ResolvedEvent GetFakeEventFor(int position, EventSource eventSource) {
-			var eventId = GetEventIdFor(position);
+		public static ResolvedEvent GetFakeEventFor(int position, EventSource eventSource, Guid? forcedEventId = null) {
+			var eventId = forcedEventId ?? GetEventIdFor(position);
 			switch (eventSource) {
 				case EventSource.SingleStream:
 					return BuildFakeEvent(eventId, "type", "streamName", position, 1234, 1234);

@@ -624,7 +624,7 @@ namespace EventStore.Core.TransactionLog.Chunks {
 		}
 
 		private bool KeepOnlyFirstEventOfDuplicate(ITableIndex tableIndex, IPrepareLogRecord<TStreamId> prepare, long eventNumber) {
-			var result = _readIndex.ReadEvent(EventRecord.UnspecifiedStreamName, prepare.EventStreamId, eventNumber);
+			var result = _readIndex.ReadEvent(IndexReader.UnspecifiedStreamName, prepare.EventStreamId, eventNumber);
 			if (result.Result == ReadEventResult.Success && result.Record.LogPosition != prepare.LogPosition)
 				return false;
 

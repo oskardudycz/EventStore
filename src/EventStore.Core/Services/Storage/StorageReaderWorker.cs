@@ -91,7 +91,7 @@ namespace EventStore.Core.Services.Storage {
 					case ReadStreamResult.NotModified:
 						if (msg.LongPollTimeout.HasValue && res.FromEventNumber > res.LastEventNumber) {
 							_publisher.Publish(new SubscriptionMessage.PollStream(
-								msg.EventStreamId, res.TfLastCommitPosition, res.LastEventNumber, //qqqq hum is string ok here?
+								msg.EventStreamId, res.TfLastCommitPosition, res.LastEventNumber,
 								DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
 						} else {
 							msg.Envelope.ReplyWith(res);

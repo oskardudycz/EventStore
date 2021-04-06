@@ -6,9 +6,6 @@ using EventStore.Core.TransactionLog.LogRecords;
 
 namespace EventStore.Core.Data {
 	public class EventRecord : IEquatable<EventRecord> {
-		//qq consider location
-		public const string UnspecifiedStreamName = "Unspecified stream name";
-
 		public bool IsJson {
 			get { return (Flags & PrepareFlags.IsJson) == PrepareFlags.IsJson; }
 		}

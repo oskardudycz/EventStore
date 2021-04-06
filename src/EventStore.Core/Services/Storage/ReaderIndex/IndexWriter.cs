@@ -200,7 +200,7 @@ namespace EventStore.Core.Services.Storage.ReaderIndex {
 					//TODO(clc): the new index should hold the log positions removing this read
 					//n.b. the index will never have the event in the case of NotReady as it only committed records are indexed
 					//in that case the position will need to come from the pre-index
-					var idempotentEvent = _indexReader.ReadEvent(EventRecord.UnspecifiedStreamName, streamId, endEventNumber);
+					var idempotentEvent = _indexReader.ReadEvent(IndexReader.UnspecifiedStreamName, streamId, endEventNumber);
 					var logPos = idempotentEvent.Result == ReadEventResult.Success
 						? idempotentEvent.Record.LogPosition : -1; 					
 					if(isReplicated)
@@ -244,7 +244,7 @@ namespace EventStore.Core.Services.Storage.ReaderIndex {
 					//TODO(clc): the new index should hold the log positions removing this read
 					//n.b. the index will never have the event in the case of NotReady as it only committed records are indexed
 					//in that case the position will need to come from the pre-index
-					var idempotentEvent = _indexReader.ReadEvent(EventRecord.UnspecifiedStreamName, streamId, eventNumber);
+					var idempotentEvent = _indexReader.ReadEvent(IndexReader.UnspecifiedStreamName, streamId, eventNumber);
 					var logPos = idempotentEvent.Result == ReadEventResult.Success
 						? idempotentEvent.Record.LogPosition : -1; 
 					if(isReplicated)

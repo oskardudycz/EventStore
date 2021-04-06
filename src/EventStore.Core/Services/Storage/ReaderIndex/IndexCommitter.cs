@@ -425,7 +425,7 @@ namespace EventStore.Core.Services.Storage.ReaderIndex {
 		}
 
 		private SystemSettings GetSystemSettings() {
-			var res = _indexReader.ReadEvent(EventRecord.UnspecifiedStreamName, _systemStreams.SettingsStream, -1);
+			var res = _indexReader.ReadEvent(IndexReader.UnspecifiedStreamName, _systemStreams.SettingsStream, -1);
 			return res.Result == ReadEventResult.Success ? DeserializeSystemSettings(res.Record.Data) : null;
 		}
 

@@ -36,6 +36,7 @@ namespace EventStore.Core.Services.Storage.ReaderIndex {
 	}
 
 	public abstract class IndexReader {
+		public static string UnspecifiedStreamName { get; } = "Unspecified stream name";
 		protected static readonly ILogger Log = Serilog.Log.ForContext<IndexReader>();
 	}
 
@@ -492,18 +493,6 @@ namespace EventStore.Core.Services.Storage.ReaderIndex {
 			} catch (Exception) {
 				return StreamMetadata.Empty;
 			}
-		}
-
-		public IndexReadEventResult ReadEvent(TStreamId streamId, long eventNumber) {
-			return ((IIndexReader<TStreamId>)this).ReadEvent(EventRecord.UnspecifiedStreamName, streamId, eventNumber);
-		}
-
-		public IndexReadStreamResult ReadStreamEventsForward(TStreamId streamId, long fromEventNumber, int maxCount) {
-			return ((IIndexReader<TStreamId>)this).ReadStreamEventsForward(EventRecord.UnspecifiedStreamName, streamId, fromEventNumber, maxCount); 
-		}
-
-		public IndexReadStreamResult ReadStreamEventsBackward(TStreamId streamId, long fromEventNumber, int maxCount) {
-			return ((IIndexReader<TStreamId>)this).ReadStreamEventsBackward(EventRecord.UnspecifiedStreamName, streamId, fromEventNumber, maxCount); 
 		}
 	}
 }

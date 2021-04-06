@@ -1,5 +1,4 @@
 ﻿namespace EventStore.Core.LogAbstraction {
-	//qq rename, relocate
 	public interface ISystemStreamLookup<TStreamId> {
 		TStreamId AllStream { get; }
 		TStreamId SettingsStream { get; }

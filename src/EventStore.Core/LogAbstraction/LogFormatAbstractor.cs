@@ -48,7 +48,7 @@ namespace EventStore.Core.LogAbstraction {
 		public IHasher<TStreamId> HighHasher { get; }
 		public IStreamNameToIdReadWrite<TStreamId> StreamIdsReadWrite { get; }
 		public IStreamNameToId<TStreamId> StreamIdsReadOnly { get; }
-		public IStreamIdToNameFactory<TStreamId> StreamNamesFactory { get; } //qq rename
+		public IStreamIdToNameFactory<TStreamId> StreamNamesFactory { get; }
 		public ISystemStreamLookup<TStreamId> SystemStreams { get; }
 		public IValidator<TStreamId> StreamIdValidator { get; }
 		public ISizer<TStreamId> StreamIdSizer { get; }

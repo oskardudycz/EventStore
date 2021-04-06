@@ -1,6 +1,6 @@
 ﻿using EventStore.Common.Utils;
 
-namespace EventStore.Core.Services.Storage.ReaderIndex {
+namespace EventStore.Core.LogV2 {
 	public class LogV2StreamIdValidator : IValidator<string> {
 		public LogV2StreamIdValidator() {
 		}

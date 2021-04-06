@@ -20,7 +20,7 @@ namespace EventStore.Core.TransactionLog.Chunks {
 		private readonly string _nodeId;
 		private readonly int _retryAttempts;
 		private readonly TimeSpan _scavengeHistoryMaxAge;
-		private static readonly ILogger Log = Serilog.Log.ForContext<TFChunkScavengerLog>(); //qq semantic change
+		private static readonly ILogger Log = Serilog.Log.ForContext<StorageScavenger>();
 		private long _spaceSaved;
 
 		/// <summary>

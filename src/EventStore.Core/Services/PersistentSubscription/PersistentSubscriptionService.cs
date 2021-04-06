@@ -16,7 +16,12 @@ using ILogger = Serilog.ILogger;
 using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 
 namespace EventStore.Core.Services.PersistentSubscription {
+	public abstract class PersistentSubscriptionService {
+		protected static readonly ILogger Log = Serilog.Log.ForContext<PersistentSubscriptionService>();
+	}
+
 	public class PersistentSubscriptionService<TStreamId> :
+		PersistentSubscriptionService,
 		IHandle<SystemMessage.BecomeShuttingDown>,
 		IHandle<TcpMessage.ConnectionClosed>,
 		IHandle<SystemMessage.BecomeLeader>,
@@ -37,7 +42,6 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		IHandle<MonitoringMessage.GetAllPersistentSubscriptionStats>,
 		IHandle<MonitoringMessage.GetPersistentSubscriptionStats>,
 		IHandle<MonitoringMessage.GetStreamPersistentSubscriptionStats> {
-		private static readonly ILogger Log = Serilog.Log.ForContext<PersistentSubscriptionService<TStreamId>>();
 
 		private Dictionary<string, List<PersistentSubscription>> _subscriptionTopics;
 		private Dictionary<string, PersistentSubscription> _subscriptionsById;

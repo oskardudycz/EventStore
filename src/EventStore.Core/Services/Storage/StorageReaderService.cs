@@ -10,11 +10,14 @@ using EventStore.Core.TransactionLog.Checkpoint;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Storage {
-	public class StorageReaderService<TStreamId> : IHandle<SystemMessage.SystemInit>,
+	public abstract class StorageReaderService {
+		protected static readonly ILogger Log = Serilog.Log.ForContext<StorageReaderService>();
+	}
+
+	public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<SystemMessage.SystemInit>,
 		IHandle<SystemMessage.BecomeShuttingDown>,
 		IHandle<SystemMessage.BecomeShutdown>,
 		IHandle<MonitoringMessage.InternalStatsRequest> {
-		private static readonly ILogger Log = Serilog.Log.ForContext<StorageReaderService<TStreamId>>();
 
 		private readonly IPublisher _bus;
 		private readonly IReadIndex _readIndex;

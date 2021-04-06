@@ -13,7 +13,11 @@ using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.TransactionLog.Chunks;
 
 namespace EventStore.Core.Services.Storage {
+	public abstract class StorageScavenger {
+	}
+
 	public class StorageScavenger<TStreamId> :
+		StorageScavenger,
 		IHandle<ClientMessage.ScavengeDatabase>,
 		IHandle<ClientMessage.StopDatabaseScavenge>,
 		IHandle<SystemMessage.StateChangeMessage> {

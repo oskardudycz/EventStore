@@ -16,14 +16,16 @@ using EventStore.Core.TransactionLog.Chunks;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.VNode {
-	public class ClusterVNodeController<TStreamId> : IHandle<Message> {
+	public abstract class ClusterVNodeController {
+		protected static readonly ILogger Log = Serilog.Log.ForContext<ClusterVNodeController>();
+	}
+
+	public class ClusterVNodeController<TStreamId> : ClusterVNodeController, IHandle<Message> {
 		public static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(5);
 		public static readonly TimeSpan LeaderReconnectionDelay = TimeSpan.FromMilliseconds(500);
 		private static readonly TimeSpan LeaderSubscriptionRetryDelay = TimeSpan.FromMilliseconds(500);
 		private static readonly TimeSpan LeaderSubscriptionTimeout = TimeSpan.FromMilliseconds(1000);
 		private static readonly TimeSpan LeaderDiscoveryTimeout = TimeSpan.FromMilliseconds(3000);
-
-		private static readonly ILogger Log = Serilog.Log.ForContext<ClusterVNodeController<TStreamId>>();
 
 		private readonly IPublisher _outputBus;
 		private readonly VNodeInfo _nodeInfo;

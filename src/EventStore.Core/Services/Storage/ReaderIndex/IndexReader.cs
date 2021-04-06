@@ -35,10 +35,12 @@ namespace EventStore.Core.Services.Storage.ReaderIndex {
 		long GetStreamLastEventNumber(TStreamId streamId);
 	}
 
-	public class IndexReader<TStreamId> : IIndexReader<TStreamId> {
-		private static readonly ILogger Log = Serilog.Log.ForContext<IndexReader<TStreamId>>();
-		private static EqualityComparer<TStreamId> StreamIdComparer { get; } = EqualityComparer<TStreamId>.Default;
+	public abstract class IndexReader {
+		protected static readonly ILogger Log = Serilog.Log.ForContext<IndexReader>();
+	}
 
+	public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
+		private static EqualityComparer<TStreamId> StreamIdComparer { get; } = EqualityComparer<TStreamId>.Default;
 
 		public long CachedStreamInfo {
 			get { return Interlocked.Read(ref _cachedStreamInfo); }

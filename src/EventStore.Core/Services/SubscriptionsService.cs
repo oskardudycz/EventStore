@@ -21,8 +21,9 @@ namespace EventStore.Core.Services {
 		SubscriberMaxCountReached = 4
 	}
 
-	public class SubscriptionsService {
-		public const string AllStreamsSubscriptionId = ""; // empty stream id means subscription to all streams //qqq can this remain a string?
+	public abstract class SubscriptionsService {
+		public const string AllStreamsSubscriptionId = ""; // empty stream id means subscription to all streams
+		protected static readonly ILogger Log = Serilog.Log.ForContext<SubscriptionsService>();
 	}
 
 	public class SubscriptionsService<TStreamId> :
@@ -38,7 +39,6 @@ namespace EventStore.Core.Services {
 		IHandle<StorageMessage.EventCommitted> {
 		private const int DontReportCheckpointReached = -1;
 
-		private static readonly ILogger Log = Serilog.Log.ForContext<SubscriptionsService<TStreamId>>();
 		private static readonly TimeSpan TimeoutPeriod = TimeSpan.FromSeconds(1);
 
 		private readonly Dictionary<string, List<Subscription>> _subscriptionTopics =

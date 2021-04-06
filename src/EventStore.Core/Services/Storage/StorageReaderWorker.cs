@@ -15,7 +15,11 @@ using ILogger = Serilog.ILogger;
 using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core.Services.Storage {
-	public class StorageReaderWorker<TStreamId> : IHandle<ClientMessage.ReadEvent>,
+	public abstract class StorageReaderWorker {
+		protected static readonly ILogger Log = Serilog.Log.ForContext<StorageReaderWorker>();
+	}
+
+	public class StorageReaderWorker<TStreamId> : StorageReaderWorker, IHandle<ClientMessage.ReadEvent>,
 		IHandle<ClientMessage.ReadStreamEventsBackward>,
 		IHandle<ClientMessage.ReadStreamEventsForward>,
 		IHandle<ClientMessage.ReadAllEventsForward>,
@@ -24,7 +28,6 @@ namespace EventStore.Core.Services.Storage {
 		IHandle<StorageMessage.EffectiveStreamAclRequest>,
 		IHandle<StorageMessage.StreamIdFromTransactionIdRequest>,
 		IHandle<StorageMessage.BatchLogExpiredMessages>, IHandle<ClientMessage.FilteredReadAllEventsBackward> {
-		private static readonly ILogger Log = Serilog.Log.ForContext<StorageReaderWorker<TStreamId>>();
 		private static readonly ResolvedEvent[] EmptyRecords = new ResolvedEvent[0];
 
 		private readonly IPublisher _publisher;

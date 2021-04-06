@@ -18,13 +18,12 @@ using EventStore.Core.TransactionLog.LogRecords;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.TransactionLog.Chunks {
-	public class TFChunkScavenger {
+	public abstract class TFChunkScavenger {
 		internal const int MaxThreadCount = 4;
+		protected static readonly ILogger Log = Serilog.Log.ForContext<TFChunkScavenger>();
 	}
 
 	public class TFChunkScavenger<TStreamId> : TFChunkScavenger {
-		private static readonly ILogger Log = Serilog.Log.ForContext<TFChunkScavenger<TStreamId>>();
-
 		private readonly TFChunkDb _db;
 		private readonly ITFChunkScavengerLog _scavengerLog;
 		private readonly ITableIndex<TStreamId> _tableIndex;

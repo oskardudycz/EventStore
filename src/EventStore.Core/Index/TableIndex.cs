@@ -22,12 +22,11 @@ namespace EventStore.Core.Index {
 		internal static readonly IndexEntry InvalidIndexEntry = new IndexEntry(0, -1, -1);
 		public const string IndexMapFilename = "indexmap";
 		public const string ForceIndexVerifyFilename = ".forceverify";
+		protected static readonly ILogger Log = Serilog.Log.ForContext<TableIndex>();
 	}
 
 	public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 		private const int MaxMemoryTables = 1;
-
-		private static readonly ILogger Log = Serilog.Log.ForContext<TableIndex<TStreamId>>();
 
 		public long CommitCheckpoint {
 			get { return Interlocked.Read(ref _commitCheckpoint); }

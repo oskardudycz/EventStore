@@ -24,13 +24,16 @@ namespace EventStore.Core.Services.Storage {
 		void AddPendingCommit(CommitLogRecord commit, long postPosition);
 	}
 
-	public class IndexCommitterService<TStreamId> : IIndexCommitterService<TStreamId>,
+	public abstract class IndexCommitterService {
+		protected readonly ILogger Log = Serilog.Log.ForContext<IndexCommitterService>();
+	}
+
+	public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCommitterService<TStreamId>,
 		IMonitoredQueue,
 		IHandle<SystemMessage.BecomeShuttingDown>,
 		IHandle<ReplicationTrackingMessage.ReplicatedTo>,
 		IHandle<StorageMessage.CommitAck>,
 		IHandle<ClientMessage.MergeIndexes> {
-		private readonly ILogger Log = Serilog.Log.ForContext<IndexCommitterService<TStreamId>>();
 		private readonly IIndexCommitter<TStreamId> _indexCommitter;
 		private readonly IPublisher _publisher;
 		private readonly IReadOnlyCheckpoint _replicationCheckpoint;

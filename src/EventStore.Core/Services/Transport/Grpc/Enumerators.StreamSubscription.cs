@@ -15,9 +15,11 @@ using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 
 namespace EventStore.Core.Services.Transport.Grpc {
 	internal static partial class Enumerators {
-		public class StreamSubscription<TStreamId> : ISubscriptionEnumerator {
-			private static readonly ILogger Log = Serilog.Log.ForContext<StreamSubscription<TStreamId>>();
+		public abstract class StreamSubscription {
+			protected static readonly ILogger Log = Serilog.Log.ForContext<StreamSubscription>();
+		}
 
+		public class StreamSubscription<TStreamId> : StreamSubscription, ISubscriptionEnumerator {
 			private readonly Guid _subscriptionId;
 			private readonly IPublisher _bus;
 			private readonly string _streamName;

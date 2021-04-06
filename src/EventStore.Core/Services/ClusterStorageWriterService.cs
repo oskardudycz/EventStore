@@ -17,12 +17,15 @@ using EventStore.Core.TransactionLog.LogRecords;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services {
+	public class ClusterStorageWriterService {
+	}
+
 	public class ClusterStorageWriterService<TStreamId> : StorageWriterService<TStreamId>,
 		IHandle<ReplicationMessage.ReplicaSubscribed>,
 		IHandle<ReplicationMessage.CreateChunk>,
 		IHandle<ReplicationMessage.RawChunkBulk>,
 		IHandle<ReplicationMessage.DataChunkBulk> {
-		private static readonly ILogger Log = Serilog.Log.ForContext<ClusterStorageWriterService<TStreamId>>();
+		private static readonly ILogger Log = Serilog.Log.ForContext<ClusterStorageWriterService>();
 
 		private readonly Func<long> _getLastIndexedPosition;
 		private readonly LengthPrefixSuffixFramer _framer;

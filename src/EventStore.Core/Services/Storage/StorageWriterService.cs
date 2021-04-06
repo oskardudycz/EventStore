@@ -23,6 +23,9 @@ using Newtonsoft.Json.Linq;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Storage {
+	public abstract class StorageWriterService {
+	}
+
 	public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>,
 		IHandle<SystemMessage.StateChangeMessage>,
 		IHandle<SystemMessage.WriteEpoch>,
@@ -34,7 +37,7 @@ namespace EventStore.Core.Services.Storage {
 		IHandle<StorageMessage.WriteTransactionEnd>,
 		IHandle<StorageMessage.WriteCommit>,
 		IHandle<MonitoringMessage.InternalStatsRequest> {
-		private static readonly ILogger Log = Serilog.Log.ForContext<StorageWriterService<TStreamId>>();
+		private static readonly ILogger Log = Serilog.Log.ForContext<StorageWriterService>();
 		private static EqualityComparer<TStreamId> StreamIdComparer { get; } = EqualityComparer<TStreamId>.Default;
 
 		protected static readonly int TicksPerMs = (int)(Stopwatch.Frequency / 1000);

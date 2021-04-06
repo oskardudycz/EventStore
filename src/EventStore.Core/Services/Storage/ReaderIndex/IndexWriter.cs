@@ -46,8 +46,11 @@ namespace EventStore.Core.Services.Storage.ReaderIndex {
 		}
 	}
 
-	public class IndexWriter<TStreamId> : IIndexWriter<TStreamId> {
-		private static readonly ILogger Log = Serilog.Log.ForContext<IndexWriter<TStreamId>>();
+	public abstract class IndexWriter {
+		protected static readonly ILogger Log = Serilog.Log.ForContext<IndexWriter>();
+	}
+
+	public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 		private static EqualityComparer<TStreamId> StreamIdComparer { get; } = EqualityComparer<TStreamId>.Default;
 
 		public long CachedTransInfo {

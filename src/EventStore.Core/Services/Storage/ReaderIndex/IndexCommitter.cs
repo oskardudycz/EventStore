@@ -26,8 +26,11 @@ namespace EventStore.Core.Services.Storage.ReaderIndex {
 		long Commit(IList<IPrepareLogRecord<TStreamId>> commitedPrepares, bool isTfEof, bool cacheLastEventNumber);
 	}
 
-	public class IndexCommitter<TStreamId> : IIndexCommitter<TStreamId> {
-		public static readonly ILogger Log = Serilog.Log.ForContext<IndexCommitter<TStreamId>>();
+	public abstract class IndexCommitter {
+		public static readonly ILogger Log = Serilog.Log.ForContext<IndexCommitter>();
+	}
+
+	public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStreamId> {
 		private static EqualityComparer<TStreamId> StreamIdComparer { get; } = EqualityComparer<TStreamId>.Default;
 
 		public long LastIndexedPosition => _indexChk.Read();

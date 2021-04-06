@@ -57,14 +57,18 @@ using MidFunc = System.Func<
 >;
 
 namespace EventStore.Core {
+	public abstract class ClusterVNode {
+		protected static readonly ILogger Log = Serilog.Log.ForContext<ClusterVNode>();
+	}
+
 	public class ClusterVNode<TStreamId> :
+		ClusterVNode,
 		IClusterVNode,
 		IHandle<SystemMessage.StateChangeMessage>,
 		IHandle<SystemMessage.BecomeShuttingDown>,
 		IHandle<SystemMessage.BecomeShutdown>,
 		IHandle<SystemMessage.SystemStart>,
 		IHandle<ClientMessage.ReloadConfig>{
-		private static readonly ILogger Log = Serilog.Log.ForContext<ClusterVNode<TStreamId>>();
 
 		public IQueuedHandler MainQueue {
 			get { return _mainQueue; }

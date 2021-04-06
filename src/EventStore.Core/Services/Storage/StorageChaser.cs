@@ -17,11 +17,14 @@ using System.Threading.Tasks;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Storage {
-	public class StorageChaser<TStreamId> : IMonitoredQueue,
+	public abstract class StorageChaser {
+		protected static readonly ILogger Log = Serilog.Log.ForContext<StorageChaser>();
+	}
+
+	public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 		IHandle<SystemMessage.SystemInit>,
 		IHandle<SystemMessage.SystemStart>,
 		IHandle<SystemMessage.BecomeShuttingDown> {
-		private static readonly ILogger Log = Serilog.Log.ForContext<StorageChaser<TStreamId>>();
 
 		private static readonly int TicksPerMs = (int)(Stopwatch.Frequency / 1000);
 		private static readonly int MinFlushDelay = 2 * TicksPerMs;

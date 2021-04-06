@@ -19,8 +19,8 @@ namespace EventStore.Core.Tests.Services.Storage {
 		protected ITransactionFileReader _tfReader;
 		protected ITableIndex<string> _tableIndex;
 		protected IIndexBackend<string> _indexBackend;
-		protected IStreamNameToId<string> _streamIds;
-		protected IStreamIdToName<string> _streamNames;
+		protected IStreamIdLookup<string> _streamIds;
+		protected IStreamNameLookup<string> _streamNames;
 		protected ISystemStreamLookup<string> _systemStreams;
 		protected IValidator<string> _validator;
 		protected ISizer<string> _sizer;
@@ -127,7 +127,7 @@ namespace EventStore.Core.Tests.Services.Storage {
 				() => _tfReader);
 			_indexBackend = new IndexBackend<string>(_readerPool, 100000, 100000);
 			var logFormat = LogFormatAbstractor.V2;
-			_streamIds = logFormat.StreamIdsReadOnly;
+			_streamIds = logFormat.StreamIds;
 			_streamNames = logFormat.StreamNamesFactory.Create();
 			_systemStreams = logFormat.SystemStreams;
 			_validator = logFormat.StreamIdValidator;

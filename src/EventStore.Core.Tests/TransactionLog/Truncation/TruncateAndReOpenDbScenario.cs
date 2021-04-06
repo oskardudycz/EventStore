@@ -49,7 +49,7 @@ namespace EventStore.Core.Tests.TransactionLog.Truncation {
 			ReadIndex = new ReadIndex<TStreamId>(new NoopPublisher(),
 				readers,
 				TableIndex,
-				_logFormat.StreamIdsReadOnly,
+				_logFormat.StreamIds,
 				_logFormat.StreamNamesFactory,
 				_logFormat.SystemStreams,
 				_logFormat.StreamIdValidator,

@@ -1,10 +1,12 @@
-﻿namespace EventStore.Core.LogAbstraction {
-	public class LogV2StreamLookup :
-		IStreamNameToIdReadWrite<string>,
-		IStreamNameToId<string>,
-		IStreamIdToName<string> {
+﻿using EventStore.Core.LogAbstraction;
 
-		public LogV2StreamLookup() {
+namespace EventStore.Core.LogV2 {
+	public class LogV2StreamNameIndex :
+		IStreamNameIndex<string>,
+		IStreamIdLookup<string>,
+		IStreamNameLookup<string> {
+
+		public LogV2StreamNameIndex() {
 		}
 
 		public bool GetOrAddId(string streamName, out string streamId) {

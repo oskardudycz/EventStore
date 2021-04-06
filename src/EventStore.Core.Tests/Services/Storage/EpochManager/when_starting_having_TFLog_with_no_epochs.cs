@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.Core.Bus;
-using EventStore.Core.LogAbstraction;
+using EventStore.Core.LogV2;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Tests.TransactionLog;

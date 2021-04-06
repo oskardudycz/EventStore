@@ -1,5 +1,6 @@
 ﻿using EventStore.Common.Utils;
 using EventStore.Core.Index.Hashes;
+using EventStore.Core.LogV2;
 using EventStore.Core.Services.Storage.ReaderIndex;
 
 namespace EventStore.Core.LogAbstraction {
@@ -7,13 +8,13 @@ namespace EventStore.Core.LogAbstraction {
 		public static LogFormatAbstractor<string> V2 { get; }
 
 		static LogFormatAbstractor() {
-			var lookup = new LogV2StreamLookup();
+			var streamNameIndex = new LogV2StreamNameIndex();
 			V2 = new LogFormatAbstractor<string>(
 				new XXHashUnsafe(),
 				new Murmur3AUnsafe(),
-				lookup,
-				lookup,
-				new PreLoadedStreamLookupFactory<string>(lookup),
+				streamNameIndex,
+				streamNameIndex,
+				new StreamNameLookupSingletonFactory<string>(streamNameIndex),
 				new LogV2SystemStreams(),
 				new LogV2StreamIdValidator(),
 				new LogV2Sizer(),
@@ -25,9 +26,9 @@ namespace EventStore.Core.LogAbstraction {
 		public LogFormatAbstractor(
 			IHasher<TStreamId> lowHasher,
 			IHasher<TStreamId> highHasher,
-			IStreamNameToIdReadWrite<TStreamId> streamIdsReadWrite,
-			IStreamNameToId<TStreamId> streamIdsReadOnly,
-			IStreamIdToNameFactory<TStreamId> streamNamesFactory,
+			IStreamNameIndex<TStreamId> streamNameIndex,
+			IStreamIdLookup<TStreamId> streamIds,
+			IStreamNameLookupFactory<TStreamId> streamNamesFactory,
 			ISystemStreamLookup<TStreamId> systemStreams,
 			IValidator<TStreamId> streamIdValidator,
 			ISizer<TStreamId> streamIdSizer,
@@ -35,8 +36,8 @@ namespace EventStore.Core.LogAbstraction {
 
 			LowHasher = lowHasher;
 			HighHasher = highHasher;
-			StreamIdsReadWrite = streamIdsReadWrite;
-			StreamIdsReadOnly = streamIdsReadOnly;
+			StreamNameIndex = streamNameIndex;
+			StreamIds = streamIds;
 			StreamNamesFactory = streamNamesFactory;
 			SystemStreams = systemStreams;
 			StreamIdValidator = streamIdValidator;
@@ -46,9 +47,9 @@ namespace EventStore.Core.LogAbstraction {
 
 		public IHasher<TStreamId> LowHasher { get; }
 		public IHasher<TStreamId> HighHasher { get; }
-		public IStreamNameToIdReadWrite<TStreamId> StreamIdsReadWrite { get; }
-		public IStreamNameToId<TStreamId> StreamIdsReadOnly { get; }
-		public IStreamIdToNameFactory<TStreamId> StreamNamesFactory { get; }
+		public IStreamNameIndex<TStreamId> StreamNameIndex { get; }
+		public IStreamIdLookup<TStreamId> StreamIds { get; }
+		public IStreamNameLookupFactory<TStreamId> StreamNamesFactory { get; }
 		public ISystemStreamLookup<TStreamId> SystemStreams { get; }
 		public IValidator<TStreamId> StreamIdValidator { get; }
 		public ISizer<TStreamId> StreamIdSizer { get; }

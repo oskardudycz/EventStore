@@ -1,6 +1,5 @@
 ﻿namespace EventStore.Core.LogAbstraction {
-	//qq rename
-	public interface IStreamNameToIdReadWrite<TStreamId> {
+	public interface IStreamNameIndex<TStreamId> {
 		bool GetOrAddId(string streamName, out TStreamId streamId);
 	}
 }

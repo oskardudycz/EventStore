@@ -67,7 +67,7 @@ namespace EventStore.Core.Tests.Services.Storage {
 			ReadIndex = new ReadIndex<TStreamId>(new NoopPublisher(),
 				readers,
 				TableIndex,
-				logFormat.StreamIdsReadOnly,
+				logFormat.StreamIds,
 				logFormat.StreamNamesFactory,
 				logFormat.SystemStreams,
 				logFormat.StreamIdValidator,

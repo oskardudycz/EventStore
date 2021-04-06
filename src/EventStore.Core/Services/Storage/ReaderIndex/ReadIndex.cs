@@ -31,14 +31,14 @@ namespace EventStore.Core.Services.Storage.ReaderIndex {
 		private readonly IIndexWriter<TStreamId> _indexWriter;
 		private readonly IIndexCommitter<TStreamId> _indexCommitter;
 		private readonly IAllReader _allReader;
-		private readonly IStreamNameToId<TStreamId> _streamIds;
-		private readonly IStreamIdToName<TStreamId> _streamNames;
+		private readonly IStreamIdLookup<TStreamId> _streamIds;
+		private readonly IStreamNameLookup<TStreamId> _streamNames;
 
 		public ReadIndex(IPublisher bus,
 			ObjectPool<ITransactionFileReader> readerPool,
 			ITableIndex<TStreamId> tableIndex,
-			IStreamNameToId<TStreamId> streamIds,
-			IStreamIdToNameFactory<TStreamId> streamNamesFactory,
+			IStreamIdLookup<TStreamId> streamIds,
+			IStreamNameLookupFactory<TStreamId> streamNamesFactory,
 			ISystemStreamLookup<TStreamId> systemStreams,
 			IValidator<TStreamId> streamIdValidator,
 			ISizer<TStreamId> sizer,

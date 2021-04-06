@@ -42,12 +42,12 @@ namespace EventStore.Core.Services {
 			TFChunkWriter writer,
 			IIndexWriter<TStreamId> indexWriter,
 			IRecordFactory<TStreamId> recordFactory,
-			IStreamNameToIdReadWrite<TStreamId> streamIds,
+			IStreamNameIndex<TStreamId> streamNameIndex,
 			ISystemStreamLookup<TStreamId> systemStreams,
 			IEpochManager epochManager,
 			QueueStatsManager queueStatsManager,
 			Func<long> getLastIndexedPosition)
-			: base(bus, subscribeToBus, minFlushDelay, db, writer, indexWriter, recordFactory, streamIds, systemStreams, epochManager, queueStatsManager) {
+			: base(bus, subscribeToBus, minFlushDelay, db, writer, indexWriter, recordFactory, streamNameIndex, systemStreams, epochManager, queueStatsManager) {
 			Ensure.NotNull(getLastIndexedPosition, "getLastCommitPosition");
 
 			_getLastIndexedPosition = getLastIndexedPosition;

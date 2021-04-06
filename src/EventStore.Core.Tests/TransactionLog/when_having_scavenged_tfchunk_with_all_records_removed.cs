@@ -5,6 +5,7 @@ using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
 using EventStore.Core.LogAbstraction;
+using EventStore.Core.LogV2;
 using EventStore.Core.Messaging;
 using EventStore.Core.Tests.Services.Storage;
 using EventStore.Core.Tests.Fakes;

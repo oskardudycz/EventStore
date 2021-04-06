@@ -39,7 +39,7 @@ namespace EventStore.Core.Tests.Services.Storage.Transactions {
 			ReadIndex = new ReadIndex<string>(new NoopPublisher(),
 				readers,
 				TableIndex,
-				_logFormat.StreamIdsReadOnly,
+				_logFormat.StreamIds,
 				_logFormat.StreamNamesFactory,
 				_logFormat.SystemStreams,
 				_logFormat.StreamIdValidator,

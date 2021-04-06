@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
-using EventStore.Core.LogAbstraction;
+using EventStore.Core.LogV2;
 using EventStore.Core.Services;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.LogRecords;

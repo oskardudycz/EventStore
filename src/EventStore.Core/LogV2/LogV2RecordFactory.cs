@@ -1,7 +1,8 @@
 ﻿using System;
+using EventStore.Core.LogAbstraction;
 using EventStore.Core.TransactionLog.LogRecords;
 
-namespace EventStore.Core.LogAbstraction {
+namespace EventStore.Core.LogV2 {
 	public class LogV2RecordFactory : IRecordFactory<string> {
 		public LogV2RecordFactory() {
 		}

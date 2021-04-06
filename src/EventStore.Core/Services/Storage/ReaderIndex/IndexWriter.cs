@@ -63,8 +63,8 @@ namespace EventStore.Core.Services.Storage.ReaderIndex {
 
 		private readonly IIndexBackend _indexBackend;
 		private readonly IIndexReader<TStreamId> _indexReader;
-		private readonly IStreamNameToId<TStreamId> _streamIds;
-		private readonly IStreamIdToName<TStreamId> _streamNames;
+		private readonly IStreamIdLookup<TStreamId> _streamIds;
+		private readonly IStreamNameLookup<TStreamId> _streamNames;
 		private readonly ISystemStreamLookup<TStreamId> _systemStreams;
 		private readonly IStickyLRUCache<long, TransactionInfo<TStreamId>> _transactionInfoCache =
 			new StickyLRUCache<long, TransactionInfo<TStreamId>>(ESConsts.TransactionMetadataCacheCapacity);
@@ -88,8 +88,8 @@ namespace EventStore.Core.Services.Storage.ReaderIndex {
 		public IndexWriter(
 			IIndexBackend indexBackend,
 			IIndexReader<TStreamId> indexReader,
-			IStreamNameToId<TStreamId> streamIds,
-			IStreamIdToName<TStreamId> streamNames,
+			IStreamIdLookup<TStreamId> streamIds,
+			IStreamNameLookup<TStreamId> streamNames,
 			ISystemStreamLookup<TStreamId> systemStreams,
 			ISizer<TStreamId> sizer) {
 			Ensure.NotNull(indexBackend, "indexBackend");

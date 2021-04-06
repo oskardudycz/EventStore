@@ -37,7 +37,7 @@ namespace EventStore.Core.Tests.Services.Storage {
 		protected readonly LogFormatAbstractor<TStreamId> _logFormat = LogFormatHelper<TStreamId>.LogFormat;
 		protected readonly IRecordFactory<TStreamId> _recordFactory = LogFormatHelper<TStreamId>.LogFormat.RecordFactory;
 		protected readonly ISystemStreamLookup<TStreamId> _systemStreams = LogFormatHelper<TStreamId>.LogFormat.SystemStreams;
-		protected readonly IStreamIdToName<TStreamId> _streamNames = LogFormatHelper<TStreamId>.LogFormat.StreamNamesFactory.Create();
+		protected readonly IStreamNameLookup<TStreamId> _streamNames = LogFormatHelper<TStreamId>.LogFormat.StreamNamesFactory.Create();
 		protected TableIndex<TStreamId> TableIndex;
 		protected IReadIndex<TStreamId> ReadIndex;
 
@@ -97,7 +97,7 @@ namespace EventStore.Core.Tests.Services.Storage {
 			ReadIndex = new ReadIndex<TStreamId>(new NoopPublisher(),
 				readers,
 				TableIndex,
-				logFormat.StreamIdsReadOnly,
+				logFormat.StreamIds,
 				logFormat.StreamNamesFactory,
 				logFormat.SystemStreams,
 				logFormat.StreamIdValidator,

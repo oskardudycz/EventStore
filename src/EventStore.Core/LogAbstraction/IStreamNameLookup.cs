@@ -1,5 +1,5 @@
 ﻿namespace EventStore.Core.LogAbstraction {
-	public interface IStreamIdToName<TStreamId> {
+	public interface IStreamNameLookup<TStreamId> {
 		string LookupName(TStreamId streamId);
 	}
 }

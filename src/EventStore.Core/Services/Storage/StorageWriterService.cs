@@ -47,7 +47,7 @@ namespace EventStore.Core.Services.Storage {
 		protected readonly TFChunkWriter Writer;
 		private readonly IIndexWriter<TStreamId> _indexWriter;
 		private readonly IRecordFactory<TStreamId> _recordFactory;
-		private readonly IStreamNameToIdReadWrite<TStreamId> _streamIds;
+		private readonly IStreamNameIndex<TStreamId> _streamNameIndex;
 		private readonly ISystemStreamLookup<TStreamId> _systemStreams;
 		protected readonly IEpochManager EpochManager;
 
@@ -89,7 +89,7 @@ namespace EventStore.Core.Services.Storage {
 			TFChunkWriter writer,
 			IIndexWriter<TStreamId> indexWriter,
 			IRecordFactory<TStreamId> recordFactory,
-			IStreamNameToIdReadWrite<TStreamId> streamIds,
+			IStreamNameIndex<TStreamId> streamNameIndex,
 			ISystemStreamLookup<TStreamId> systemStreams,
 			IEpochManager epochManager,
 			QueueStatsManager queueStatsManager) {
@@ -99,7 +99,7 @@ namespace EventStore.Core.Services.Storage {
 			Ensure.NotNull(writer, "writer");
 			Ensure.NotNull(indexWriter, "indexWriter");
 			Ensure.NotNull(recordFactory, nameof(recordFactory));
-			Ensure.NotNull(streamIds, nameof(streamIds));
+			Ensure.NotNull(streamNameIndex, nameof(streamNameIndex));
 			Ensure.NotNull(systemStreams, nameof(systemStreams));
 			Ensure.NotNull(epochManager, "epochManager");
 
@@ -108,7 +108,7 @@ namespace EventStore.Core.Services.Storage {
 			Db = db;
 			_indexWriter = indexWriter;
 			_recordFactory = recordFactory;
-			_streamIds = streamIds;
+			_streamNameIndex = streamNameIndex;
 			_systemStreams = systemStreams;
 			EpochManager = epochManager;
 
@@ -249,7 +249,7 @@ namespace EventStore.Core.Services.Storage {
 				if (msg.CancellationToken.IsCancellationRequested)
 					return;
 
-				_streamIds.GetOrAddId(msg.EventStreamId, out var streamId);
+				_streamNameIndex.GetOrAddId(msg.EventStreamId, out var streamId);
 				var commitCheck = _indexWriter.CheckCommit(streamId, msg.ExpectedVersion,
 					msg.Events.Select(x => x.EventId));
 				if (commitCheck.Decision != CommitDecision.Ok) {

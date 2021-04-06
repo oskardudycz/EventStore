@@ -10,7 +10,7 @@ using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using System.Text;
 using EventStore.Core.Authentication.InternalAuthentication;
-using EventStore.Core.LogAbstraction;
+using EventStore.Core.LogV2;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Core.Services;

@@ -1,5 +1,5 @@
 using System;
-using EventStore.Core.LogAbstraction;
+using EventStore.Core.LogV2;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;

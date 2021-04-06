@@ -1,6 +1,7 @@
-﻿using EventStore.Core.Services;
+﻿using EventStore.Core.LogAbstraction;
+using EventStore.Core.Services;
 
-namespace EventStore.Core.LogAbstraction {
+namespace EventStore.Core.LogV2 {
 	public class LogV2SystemStreams : ISystemStreamLookup<string> {
 		public LogV2SystemStreams() {
 		}

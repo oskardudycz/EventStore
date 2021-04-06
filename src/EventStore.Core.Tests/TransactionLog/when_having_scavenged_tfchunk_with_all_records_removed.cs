@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
+using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messaging;
 using EventStore.Core.Tests.Services.Storage;
 using EventStore.Core.Tests.Fakes;
@@ -16,7 +17,6 @@ using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
-using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core.Tests.TransactionLog {
 	[TestFixture]

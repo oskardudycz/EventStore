@@ -6,6 +6,7 @@ using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
 using EventStore.Core.Helpers;
 using EventStore.Core.Index;
+using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services;
 using EventStore.Core.Services.Storage.ReaderIndex;
@@ -19,7 +20,6 @@ using NUnit.Framework;
 using EventStore.Core.Util;
 using EventStore.Core.Index.Hashes;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
-using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core.Tests.Services.Storage {
 	public abstract class ReadIndexTestScenario : ReadIndexTestScenario<string> {

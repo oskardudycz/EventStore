@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using EventStore.Core.Bus;
 using EventStore.Core.Index;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Storage;
 using EventStore.Core.Services.Storage.ReaderIndex;

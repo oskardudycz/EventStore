@@ -5,11 +5,11 @@ using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.DataStructures;
+using EventStore.Core.LogAbstraction;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.LogRecords;
 using ILogger = Serilog.ILogger;
-using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core.Services.Storage.EpochManager {
 	public class EpochManager : IEpochManager {

@@ -10,7 +10,6 @@ using EventStore.Core.Services.TimerService;
 using System.Linq;
 using EventStore.Core.Util;
 using ILogger = Serilog.ILogger;
-using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core.Services {
 	public enum SubscriptionDropReason {

@@ -5,7 +5,6 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Storage.ReaderIndex;

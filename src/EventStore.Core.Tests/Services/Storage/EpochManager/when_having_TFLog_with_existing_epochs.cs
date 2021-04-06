@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.Core.Bus;
+using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Tests.TransactionLog;
@@ -16,7 +17,6 @@ using EventStore.Core.Services.Storage.EpochManager;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.TransactionLog.LogRecords;
 using System.Threading;
-using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core.Tests.Services.Storage {
 	[TestFixture]

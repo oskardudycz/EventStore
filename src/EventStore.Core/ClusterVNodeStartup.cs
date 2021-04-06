@@ -28,8 +28,6 @@ using ElectionsService = EventStore.Core.Services.Transport.Grpc.Cluster.Electio
 using Operations = EventStore.Core.Services.Transport.Grpc.Operations;
 using ClusterGossip = EventStore.Core.Services.Transport.Grpc.Cluster.Gossip;
 using ClientGossip = EventStore.Core.Services.Transport.Grpc.Gossip;
-using EventStore.Core.Services.Storage;
-using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core {
 	public class ClusterVNodeStartup<TStreamId> : IStartup, IHandle<SystemMessage.SystemReady>,

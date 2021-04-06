@@ -3,9 +3,9 @@ using System.Text;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
 using EventStore.Core.Bus;
+using EventStore.Core.LogAbstraction;
 using EventStore.Core.TransactionLog.LogRecords;
 using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
-using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core.Tests.Helpers.IODispatcherTests {
 	public static class IODispatcherTestHelpers {

@@ -15,6 +15,7 @@ using EventStore.Core.Authentication.InternalAuthentication;
 using EventStore.Core.Authorization;
 using EventStore.Core.Bus;
 using EventStore.Core.Cluster.Settings;
+using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Gossip;
 using EventStore.Core.Services.Monitoring;
@@ -31,7 +32,6 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.AspNetCore.TestHost;
 using ILogger = Serilog.ILogger;
-using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core.Tests.Helpers {
 	public class MiniClusterNode {

@@ -18,7 +18,6 @@ using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Core.Util;
 using System.IO;
 using System.Threading.Tasks;
-using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit {
 	public abstract class MiniNodeWithExistingRecords : MiniNodeWithExistingRecords<string> {

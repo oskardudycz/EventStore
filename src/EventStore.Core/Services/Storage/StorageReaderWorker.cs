@@ -4,6 +4,7 @@ using System.Security.Claims;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
+using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.TransactionLog.Checkpoint;
@@ -12,7 +13,6 @@ using EventStore.Core.Services.Histograms;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Messaging;
 using ILogger = Serilog.ILogger;
-using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core.Services.Storage {
 	public abstract class StorageReaderWorker {

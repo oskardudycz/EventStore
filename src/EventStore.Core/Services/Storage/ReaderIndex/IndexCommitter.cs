@@ -7,11 +7,11 @@ using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Index;
 using EventStore.Core.Messages;
+using EventStore.Core.LogAbstraction;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.LogRecords;
 using ILogger = Serilog.ILogger;
-using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core.Services.Storage.ReaderIndex {
 	public interface IIndexCommitter {

@@ -13,7 +13,9 @@ using Connection = EventStore.Transport.Tcp.TcpTypedConnection<byte[]>;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.TestClient {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 	public class TcpTestClient {
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 		private readonly BufferManager _bufferManager =
 			new BufferManager(TcpConfiguration.BufferChunksCount, TcpConfiguration.SocketBufferSize);
 
@@ -23,10 +25,16 @@ namespace EventStore.TestClient {
 		private readonly bool _useSsl;
 		private readonly ILogger _log;
 		private readonly bool _interactiveMode;
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 		public readonly EndPoint TcpEndpoint;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 		public readonly ClientOptions Options;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 		public TcpTestClient(ClientOptions options, bool interactiveMode, ILogger log) {
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 			_interactiveMode = interactiveMode;
 			_log = log;
 			_useSsl = options.UseTls;
@@ -35,7 +43,9 @@ namespace EventStore.TestClient {
 			Options = options;
 		}
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 		public Connection CreateTcpConnection(CommandProcessorContext context,
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 			Action<Connection, TcpPackage> handlePackage,
 			Action<Connection> connectionEstablished = null,
 			Action<Connection, SocketError> connectionClosed = null,

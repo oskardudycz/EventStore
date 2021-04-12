@@ -13,6 +13,6 @@ jobs:
         run: echo "$GITHUB_CONTEXT"
       - uses: actions/checkout@v2
       - name: Cherry Pick PR for label
-        uses: EventStore/Automations/cherry-pick-pr-for-label@master
+        uses: EventStore/Automations/cherry-pick-pr-for-label@cherry-pick-pr-for-label_ignore_for_not_merged
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
